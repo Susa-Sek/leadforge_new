@@ -1,3 +1,4 @@
+
 # AI Coding Starter Kit
 
 > A Next.js template with an AI-powered development workflow using 6 specialized agents
