@@ -1,25 +1,40 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Search } from 'lucide-react'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { getCreditBalance } from '@/lib/actions/credits'
+import { SearchPageClient } from './search-page-client'
 
-export default function SuchePage() {
+export default async function SuchePage() {
+  const supabase = await createClient()
+
+  // Get current user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    redirect('/login')
+  }
+
+  // Get user's credit balance
+  const credits = await getCreditBalance(user.id)
+
   return (
-    <div className="flex items-center justify-center min-h-[60vh] animate-fade-in">
-      <Card className="max-w-md w-full text-center">
-        <CardHeader>
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Search className="h-8 w-8 text-primary" />
-          </div>
-          <CardTitle className="text-xl">Lead-Suche</CardTitle>
-          <CardDescription>
-            {"Finde qualifizierte B2B-Leads mit KI-gest\u00FCtzter Suche. Filtere nach Branche, Standort, Unternehmensgr\u00F6\u00DFe und mehr."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            {"Diese Funktion wird bald verf\u00FCgbar sein."}
-          </p>
-        </CardContent>
-      </Card>
+    <div className="space-y-6 animate-fade-in">
+      {/* Page Header */}
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Lead-Suche</h2>
+        <p className="text-muted-foreground">
+          Finde qualifizierte B2B-Leads mit KI-gestützter Suche. Filtere nach Branche, Standort und mehr.
+        </p>
+      </div>
+
+      {/* Search Page Client Component */}
+      <SearchPageClient
+        userId={user.id}
+        userCredits={credits.remaining}
+        userTotalCredits={credits.total}
+      />
     </div>
   )
 }

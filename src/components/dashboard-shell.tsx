@@ -29,6 +29,7 @@ import { UserNav } from '@/components/user-nav'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { CreditProgress } from '@/components/credit-progress'
 import { LowCreditWarning, LowCreditBadge } from '@/components/low-credit-warning'
+import { ActiveSearchBanner } from '@/components/search/active-search-banner'
 
 const navItems = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -121,6 +122,7 @@ export function DashboardShell({ children, user, credits }: DashboardShellProps)
           />
           {children}
         </main>
+        <ActiveSearchBanner />
       </SidebarInset>
     </SidebarProvider>
   )
