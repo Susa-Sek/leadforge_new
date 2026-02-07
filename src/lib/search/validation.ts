@@ -226,6 +226,62 @@ export const searchResultsResponseSchema = z.object({
 export type SearchResultsResponse = z.infer<typeof searchResultsResponseSchema>
 
 // ============================================================================
+// SEARCH FILTER SCHEMAS
+// ============================================================================
+
+/**
+ * Query filter parameters for GET /api/search/results
+ */
+export const searchResultFiltersSchema = z.object({
+  minRating: z.number().min(0).max(5).nullable(),
+  maxRating: z.number().min(0).max(5).nullable(),
+  minReviewCount: z.number().int().min(0).nullable(),
+  maxReviewCount: z.number().int().min(0).nullable(),
+})
+
+export type SearchResultFilters = {
+  applied: {
+    minRating: number | null
+    maxRating: number | null
+    minReviewCount: number | null
+    maxReviewCount: number | null
+  }
+  filteredCount: number
+}
+
+/**
+ * Rating filter input from URL query params
+ */
+export const ratingFilterQuerySchema = z.object({
+  min_rating: z.string().regex(/^\d+(\.\d+)?$/).optional(),
+  max_rating: z.string().regex(/^\d+(\.\d+)?$/).optional(),
+  min_review_count: z.string().regex(/^\d+$/).optional(),
+  max_review_count: z.string().regex(/^\d+$/).optional(),
+})
+
+export type RatingFilterQuery = z.infer<typeof ratingFilterQuerySchema>
+
+/**
+ * Rating range for UI slider
+ */
+export const ratingRangeSchema = z.object({
+  min: z.number().min(0).max(5),
+  max: z.number().min(0).max(5),
+})
+
+export type RatingRange = z.infer<typeof ratingRangeSchema>
+
+/**
+ * Review count range for UI slider
+ */
+export const reviewCountRangeSchema = z.object({
+  min: z.number().int().min(0),
+  max: z.number().int().min(0),
+})
+
+export type ReviewCountRange = z.infer<typeof reviewCountRangeSchema>
+
+// ============================================================================
 // WEBHOOK SCHEMAS
 // ============================================================================
 

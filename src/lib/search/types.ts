@@ -22,6 +22,57 @@ export interface SearchParams {
   maxResults: number
 }
 
+// ============================================================================
+// RATING FILTER TYPES
+// ============================================================================
+
+/**
+ * Rating filter parameters for API requests
+ * Used in GET /api/search/results query string
+ */
+export interface RatingFilterParams {
+  min_rating?: number      // 0-5
+  max_rating?: number      // 0-5
+  min_review_count?: number // >= 0
+  max_review_count?: number // >= 0
+}
+
+/**
+ * Rating range for UI slider component
+ */
+export interface RatingRange {
+  min: number  // 0-5
+  max: number  // 0-5
+}
+
+/**
+ * Review count range for UI slider component
+ */
+export interface ReviewCountRange {
+  min: number  // >= 0
+  max: number  // >= 0
+}
+
+/**
+ * Filter metadata returned by API
+ */
+export interface SearchResultFilters {
+  applied: {
+    minRating: number | null
+    maxRating: number | null
+    minReviewCount: number | null
+    maxReviewCount: number | null
+  }
+  filteredCount: number
+}
+
+/**
+ * Extended search results response with filters
+ */
+export interface SearchResultsResponseWithFilters extends SearchStatusResponse {
+  filters: SearchResultFilters
+}
+
 // API Response for starting a search
 export interface StartSearchResponse {
   success: boolean
@@ -97,6 +148,7 @@ export interface SearchResultLead {
     linkedin?: string
     twitter?: string
     youtube?: string
+    xing?: string
   }
   openingHours?: Record<string, string>
   imageUrl?: string

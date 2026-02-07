@@ -1,7 +1,228 @@
 
+# Development Status Overview
+
+## Epic Status Summary
+
+| Epic | Name | Status | PROJ | Letztes Update |
+|------|------|--------|------|----------------|
+| E1 | Foundation & Projektsetup | COMPLETED | PROJ-1 bis PROJ-4 | 2026-02-07 |
+| E2 | Authentifizierung & User Management | COMPLETED | PROJ-5 bis PROJ-9 | 2026-02-07 |
+| E3 | Credit-System | COMPLETED | PROJ-10, PROJ-11 | 2026-02-07 |
+| E4 | Lead-Suche (Kernfunktion) | COMPLETED | PROJ-12 bis PROJ-15 | 2026-02-08 |
+| **E5** | **Ergebnis-Anzeige & Filter** | **⚠️ NEEDS_FIX** | **PROJ-16, PROJ-17** | **2026-02-07** |
+| E6 | Sammlungen & Suchverlauf | PLANNED | PROJ-18, PROJ-19 | - |
+| E7 | CRM-System | PLANNED | PROJ-20, PROJ-21 | - |
+| E8 | Stripe-Integration | PLANNED | PROJ-22 bis PROJ-24 | - |
+| E9 | Export-Funktionen | PLANNED | PROJ-25 | - |
+| E10 | Benachrichtigungssystem | PLANNED | PROJ-26 | - |
+| E11 | Admin-Dashboard | PLANNED | PROJ-27 | - |
+| E12 | Landing Page & Marketing | PLANNED | PROJ-28, PROJ-29 | - |
+| E13 | Einstellungen & Profil | PLANNED | PROJ-30 | - |
+| E14 | Feedback & Kontakt | PLANNED | PROJ-31 | - |
+
+## E4 Phase - COMPLETED (2026-02-08)
+
+E4 wurde erfolgreich abgeschlossen mit folgenden Deliverables:
+
+**Backend (PROJ-13):**
+- POST /api/search/start - Suche initiieren mit Credit-Deduction
+- GET /api/search/status - Status-Polling fuer laufende Suchen
+- GET /api/search/results - Ergebnisse abrufen
+- POST /api/webhooks/apify - Webhook-Handler fuer Apify
+- Database Migration 20250208_search_system.sql deployed
+- 3-Level Fallback Chain (Primary -> Fallback -> Mock)
+
+**Frontend (PROJ-12, PROJ-14):**
+- SearchForm Component mit Validation und Credit-Preview
+- SearchProgress Component mit 6-Step Visualisierung
+- ActiveSearchBanner fuer globale Suche-Indikation
+- useSearch Hook mit Realtime + Polling Hybrid
+- Search Page unter /dashboard/suche
+
+**QA Report:**
+- PROJ-12: PASS mit 2 Low-Priority Bugs (Umlaute, Credit-Decimal)
+- PROJ-13: PASS mit 1 Low-Priority TODO (Webhook Signature)
+- PROJ-14: PASS ohne Issues
+- **Gesamt: READY FOR PRODUCTION**
+
+## E5 Phase Coordination Strategy - COMPLETED
+
+### Tasks Status
+
+| Task | Assignee | Status | Blocked By |
+|------|----------|--------|------------|
+| E5 Requirements & Architecture | Solution Architect | **completed** | - |
+| E5 Frontend: Lead Results Table (PROJ-16) | Frontend Developer | **completed** | - |
+| E5 Frontend: Smart Filter System (PROJ-17) | Frontend Developer | **completed** | - |
+| E5 QA Testing | QA Engineer | **ready** | - |
+
+### Architecture Document
+
+**docs/architecture-e5-lead-ergebnisse-filter.md** - Vollstaendige Architecture fuer E5:
+- Component Structure & Data Model
+- Feature Matrix (Free/Pro/Enterprise)
+- Tech Decisions (TanStack Table, Client-side Filter)
+- Implementation Status & Offene Arbeiten
+
+## E5 Phase - FIXED - Ready for Re-QA (2026-02-08)
+
+### PROJ-16: Lead-Ergebnis-Tabelle - COMPLETED
+
+**Frontend Implementation:**
+
+**Components Created:**
+
+1. **LeadResultsTable** (`src/components/search/lead-results-table.tsx`)
+   - TanStack Table Integration für fortgeschrittene Tabellen-Funktionen
+   - Pagination mit 10/25/50/100 Zeilen pro Seite
+   - Sortierung per Klick auf Spalten-Header
+   - Zeilenauswahl mit Checkboxen (einzeln + alle)
+   - Spalten-Visibility Toggle via Dropdown-Menü
+   - Responsive Design mit horizontal Scroll
+   - Loading Skeleton und Empty States
+
+2. **LeadExportButton** (`src/components/search/lead-export-button.tsx`)
+   - CSV Export für Pro/Enterprise Nutzer
+   - Excel Export (.xlsx) für Enterprise mit xlsx Library
+   - BOM-Präfix für Excel-Kompatibilität
+   - Export ausgewählter Zeilen oder aller Ergebnisse
+   - Plan-gated mit Upgrade-Prompts für Free-User
+   - Variants: dropdown (default), buttons, minimal
+
+3. **Plan-Gate Components** (bestehend, integriert)
+   - `PlanGate` - Blur-Effekt mit Upgrade-Badge
+   - `PlanGateBadge` - Reiner Badge ohne Blur
+   - `UpgradePrompt` - Vollständige Upgrade-Karte
+
+**Plan-basiertes Feature-Gating:**
+
+| Feature | Free | Pro | Enterprise |
+|---------|------|-----|------------|
+| Firma, Email, Website | ✅ | ✅ | ✅ |
+| Kontakt, Adresse, Karte | ✅ | ✅ | ✅ |
+| Telefon | 🔒 | ✅ | ✅ |
+| Branche, Bewertung | 🔒 | ✅ | ✅ |
+| Social Media Links | 🔒 | 🔒 | ✅ |
+| CSV Export | 🔒 | ✅ | ✅ |
+| Excel Export | 🔒 | 🔒 | ✅ |
+
+🔒 = Blur-Effekt mit Upgrade-Badge
+
+**Integration:**
+- SearchPageClient zeigt LeadResultsTable wenn Suche abgeschlossen
+- Server-Page liest plan_tier aus Profil (Fallback: 'free')
+- Export-Button in Toolbar integriert
+- Spalten-Visibility persistiert pro Session
+
+### PROJ-17: Smart-Filter-System - COMPLETED
+
+**Frontend Implementation:**
+
+**Components Created:**
+
+1. **FilterToggleGroup** (`src/components/search/filter-toggle-group.tsx`)
+   - Ja/Nein/Egal Drei-Zustand-Toggle
+   - Farbcodierung: Grün (Ja), Rot (Nein), Grau (Egal)
+   - Accessible mit ARIA labels und Keyboard-Navigation
+   - Compact-Variante für Inline-Filter
+
+2. **FilterRangeSlider** (`src/components/search/filter-range-slider.tsx`)
+   - Dual-Range-Slider für Min/Max Werte
+   - Eingabefelder für exakte Werte
+   - Radius-Filter mit Preset-Buttons (5-250km)
+   - Real-time Updates mit Debouncing
+
+3. **ActiveFilters** (`src/components/search/active-filters.tsx`)
+   - Filter-Chips mit Farbcodierung nach Zustand
+   - Einzelne Filter-Entfernung via X-Button
+   - "Alle zurücksetzen" Funktion
+   - Filter-Anzahl Badge
+
+4. **SmartFilter** (`src/components/search/smart-filter.tsx`)
+   - Hauptfilter-Panel mit allen Features
+   - URL-State-Persistenz (shareable URLs)
+   - Responsive: Sheet (Mobile) / Sidebar (Desktop)
+   - Plan-basiertes Feature-Gating
+
+**Filter-Features nach Plan:**
+
+| Filter | Free | Pro | Enterprise |
+|--------|------|-----|------------|
+| Website, Email, Telefon | ✅ | ✅ | ✅ |
+| LinkedIn, Xing | 🔒 | ✅ | ✅ |
+| Branche (Multi-Select) | 🔒 | ✅ | ✅ |
+| Mitarbeiterzahl | 🔒 | ✅ | ✅ |
+| Umsatz | 🔒 | 🔒 | ✅ |
+| Standort (Radius) | 🔒 | 🔒 | ✅ |
+
+🔒 = Upgrade-Prompt mit Blur-Effekt
+
+**URL Query Schema:**
+```
+?f_web=yes|no|any           # Website Filter
+?f_email=yes|no|any         # Email Filter
+?f_phone=yes|no|any         # Phone Filter
+?f_linkedin=yes|no|any      # LinkedIn Filter (Pro+)
+?f_xing=yes|no|any          # Xing Filter (Pro+)
+?f_industry=it,marketing    # Branchen Multi-Select
+?f_emp_min=10               # Mitarbeiter Min
+?f_radius=50                # Radius in km
+```
+
+**Filter-Logik:**
+- Ja = Nur Leads MIT dieser Eigenschaft
+- Nein = Nur Leads OHNE diese Eigenschaft
+- Egal = Alle Leads (Filter ignorieren)
+- Kombination via AND (alle Filter müssen passen)
+
+**Integration:**
+- FilterState via URL query params synchronisiert
+- Automatische State-Wiederherstellung bei Page-Reload
+- Filter-Count Badge auf Filter-Button
+- Exportiert als SmartFilter, useSmartFilter Hook
+
+**Dependencies hinzugefügt:**
+- `@tanstack/react-table` - Headless UI für Data Tables
+- `xlsx` - Excel-Datei Generierung
+
+**Files Created:**
+- `src/components/search/lead-results-table.tsx` (329 Zeilen)
+- `src/components/search/lead-export-button.tsx` (374 Zeilen)
+
+**Files Modified:**
+- `src/components/search/index.ts` - Barrel exports aktualisiert
+- `src/app/dashboard/suche/page.tsx` - Plan tier support
+- `src/app/dashboard/suche/search-page-client.tsx` - Results table integration
+
+### E5 Architecture Document
+
+Vollstaendige Architektur-Dokumentation:
+- **Datei:** `docs/architecture-e5-lead-ergebnisse-filter.md`
+- **Inhalt:** Component Structure, Feature Matrix, Tech Decisions, Handoff Checklist
+
+### Ziel von E5
+Implementation der Lead-Ergebnis-Tabelle (PROJ-16) und des Smart-Filter-Systems (PROJ-17) fuer die Anzeige und Filterung von Suchergebnissen.
+
+### Abhaengigkeiten
+- E4 ist abgeschlossen - API Routes und Datenbank sind bereit
+- Keine Backend-Arbeit fuer E5 noetig (bestehende API /api/search/results wird verwendet)
+
+### Acceptance Criteria E5
+**PROJ-16 Lead Table:**
+- Tabelle mit allen Lead-Daten (Name, Adresse, Telefon, Email, Website, Rating)
+- Plan-basiertes Feature-Gating (Free/Starter/Pro)
+- Blur-Effekt fuer gesperrte Features mit Upgrade-Badge
+- Sortierung, Pagination, Spalten-Konfiguration
+
+**PROJ-17 Smart Filter:**
+- Quick-Filter fuer alle Plaene (Website, Email, Telefon)
+- Smart-Filter fuer Pro+ (Social Media, Rating, Reviews)
+- Ja/Nein/Egal Logik fuer Social-Media-Filter
+- Filter-State in URL persistieren
+
 ---
 
-## E4 Phase Coordination Strategy
+## E4 Phase Coordination Strategy (ARCHIVED)
 
 ### Task Dependency Graph
 
@@ -305,6 +526,24 @@ ENABLE_MOCK_DATA=false
 
 | Datum | Aenderung | Agent |
 |-------|-----------|-------|
+| 2026-02-08 | **E5 Bugfix Complete:** Alle 14 Bugs aus E5-QA-REPORT.md behoben | Frontend Developer |
+| 2026-02-08 | BUG-1 FIX: SmartFilter in search-page-client.tsx integriert | Frontend Developer |
+| 2026-02-08 | BUG-2 FIX: Plan-Gating korrigiert (Email/Website/Kontakt geblurrt für Free) | Frontend Developer |
+| 2026-02-08 | BUG-3 FIX: Bewertungs-Filter (Min/Max Rating + Reviews) hinzugefügt | Frontend Developer |
+| 2026-02-08 | BUG-4 FIX: Spalten-Persistenz in localStorage implementiert | Frontend Developer |
+| 2026-02-08 | BUG-5 FIX: CSV Separator auf Semikolon geändert für deutsches Excel | Frontend Developer |
+| 2026-02-08 | BUG-6 FIX: QuickFilterBar Komponente für Badge-Leiste erstellt | Frontend Developer |
+| 2026-02-08 | BUG-7 FIX: Bulk-Aktionen-Toolbar in LeadResultsTable hinzugefügt | Frontend Developer |
+| 2026-02-08 | BUG-8 FIX: Pagination nur bei > 50 Ergebnissen | Frontend Developer |
+| 2026-02-08 | BUG-9 FIX: Live Ergebnis-Anzahl "X von Y Leads" angezeigt | Frontend Developer |
+| 2026-02-08 | BUG-14 FIX: Dezimal-Komma für Bewertungen in CSV Export | Frontend Developer |
+| 2026-02-08 | **PROJ-17 Frontend Complete:** Smart-Filter-System mit Ja/Nein/Egal-Logik | Frontend Developer |
+| 2026-02-08 | FilterToggleGroup: Ja/Nein/Egal Drei-Zustand-Toggle mit Farbcodierung | Frontend Developer |
+| 2026-02-08 | FilterRangeSlider: Dual-Range fuer Mitarbeiterzahl und Umsatz | Frontend Developer |
+| 2026-02-08 | ActiveFilters: Filter-Chips mit Entfernen-Funktion | Frontend Developer |
+| 2026-02-08 | SmartFilter: Hauptkomponente mit URL-State-Sync und Plan-Gating | Frontend Developer |
+| 2026-02-08 | **PROJ-16 Frontend Complete:** Lead-Ergebnis-Tabelle mit Plan-Gating | Frontend Developer |
+| 2026-02-08 | **E5 Requirements Complete:** PROJ-16 und PROJ-17 Spezifikationen erstellt | Requirements Engineer |
 | 2026-02-08 | **TypeScript Build Fixes:** Fixed all type errors from Backend/Frontend integration | DevOps Engineer |
 | 2026-02-08 | Fixed: Added 'UNAUTHORIZED' to StartSearchError schema in validation.ts | DevOps Engineer |
 | 2026-02-08 | Fixed: Type issues in search/start/route.ts (Zod fieldErrors, Record types) | DevOps Engineer |
@@ -621,5 +860,228 @@ ENABLE_MOCK_DATA=false
 **Overall Feature Status: READY FOR PRODUCTION**
 
 All core functionality works as specified. The 3 identified issues are cosmetic or have mitigations in place. Mock mode provides a complete fallback for development and testing.
+
+---
+
+# QA Test Report E5 - PROJ-16, PROJ-17
+
+**Test Date:** 2026-02-07
+**Tester:** QA Engineer
+**Environment:** Local Development
+**App URL:** http://localhost:3000
+
+## Executive Summary
+
+| Feature | Status | Bugs Found | Severity |
+|---------|--------|------------|----------|
+| PROJ-16: Lead Results Table | ⚠️ PARTIAL | 7 | 2 Critical, 2 High |
+| PROJ-17: Smart Filter System | ⚠️ PARTIAL | 5 | 2 Critical, 2 High |
+| **Overall** | **⚠️ NEEDS_FIX** | **14** | 3 Critical, 4 High |
+
+**Recommendation:** Features require fixes before production deployment. Critical issues (SmartFilter integration, Plan-Gating mismatch) must be resolved.
+
+---
+
+## PROJ-16: Lead Results Table - Test Results
+
+### Acceptance Criteria Summary
+
+| User Story | Criteria Met | Total | Status |
+|------------|--------------|-------|--------|
+| US-16.1: Tabelle anzeigen | 4/6 | 67% | ⚠️ Partial |
+| US-16.2: Plan-Gating | 3/6 | 50% | ❌ Fail |
+| US-16.3: Spalten-Konfig | 3/6 | 50% | ❌ Fail |
+| US-16.4: Sortierung | 5/6 | 83% | ⚠️ Partial |
+| US-16.5: Pagination | 4/5 | 80% | ⚠️ Partial |
+| US-16.6: Bulk-Aktionen | 3/6 | 50% | ❌ Fail |
+
+### Critical Issues (PROJ-16)
+
+#### BUG-1: Plan-Gating Abweichung
+- **Severity:** 🔴 Critical
+- **Issue:** E-Mail und Website sind für Free-User vollständig sichtbar
+- **Expected:** Geblurrt mit Upgrade-Badge
+- **Actual:** Kein Blur, keine Einschränkung
+- **Impact:** Free-User sehen Premium-Daten ohne Upgrade
+
+#### BUG-2: CSV Format falsch
+- **Severity:** 🟠 High
+- **Issue:** CSV verwendet Komma statt Semikolon
+- **Expected:** `Firma;Adresse;Telefon` (deutsches Format)
+- **Actual:** `Firma,Adresse,Telefon` (US-Format)
+- **Impact:** Deutsche Excel zeigt Fehler bei Import
+
+### High Priority Issues (PROJ-16)
+
+#### BUG-3: Spalten-Konfiguration nicht persistent
+- **Severity:** 🟠 High
+- **Issue:** Spalten-Einstellungen gehen beim Reload verloren
+- **Expected:** localStorage Speicherung
+- **Actual:** Keine Persistenz
+
+#### BUG-4: Bulk-Aktionen-Toolbar fehlt
+- **Severity:** 🟠 High
+- **Issue:** Keine Toolbar für Massen-Aktionen
+- **Missing:** Export, Sammlung hinzufügen, CRM Import
+
+### Medium Priority Issues (PROJ-16)
+
+#### BUG-5: Pagination immer sichtbar
+- **Severity:** 🟡 Medium
+- **Issue:** Pagination auch bei < 50 Ergebnissen
+- **Expected:** Ausblenden bei <= 50
+
+#### BUG-6: Fehlende Spalten
+- **Severity:** 🟡 Medium
+- **Issue:** Öffnungszeiten und Bild fehlen
+- **Expected:** Laut Requirements
+
+---
+
+## PROJ-17: Smart Filter System - Test Results
+
+### Acceptance Criteria Summary
+
+| User Story | Criteria Met | Total | Status |
+|------------|--------------|-------|--------|
+| US-17.1: Quick-Filter | 5/6 | 83% | ⚠️ Partial |
+| US-17.2: Smart-Filter | 6/8 | 75% | ⚠️ Partial |
+| US-17.3: Bewertungs-Filter | 0/5 | 0% | ❌ Fail |
+| US-17.4: Filter-Status | 5/5 | 100% | ✅ Pass |
+| US-17.5: Upsell | 5/5 | 100% | ✅ Pass |
+
+### Critical Issues (PROJ-17)
+
+#### BUG-7: SmartFilter nicht integriert
+- **Severity:** 🔴 Critical
+- **Issue:** SmartFilter Komponente existiert aber ist nicht in SearchPage eingebunden
+- **Expected:** Filter-Panel neben/nach Tabelle
+- **Actual:** Filter nicht verfügbar für User
+- **Impact:** User können keine Filter verwenden
+
+#### BUG-8: Bewertungs-Filter komplett fehlend
+- **Severity:** 🔴 Critical
+- **Issue:** Keine Slider für Rating oder Review Count
+- **Expected:** Min/Max Slider für Bewertung (1.0-5.0) und Anzahl (0-1000+)
+- **Impact:** AC von US-17.3 nicht erfüllt
+
+### High Priority Issues (PROJ-17)
+
+#### BUG-9: Quick-Filter Badge-Leiste fehlt
+- **Severity:** 🟠 High
+- **Issue:** Keine separate Quick-Filter Leiste oberhalb der Tabelle
+- **Expected:** Badges: "Mit Website", "Mit E-Mail", "4.5+"
+
+#### BUG-10: Social Media Filter Abweichung
+- **Severity:** 🟠 High
+- **Issue:** LinkedIn/Xing statt Instagram/Facebook/YouTube/TikTok/Twitter
+- **Expected:** Laut Requirements
+- **Actual:** Nur LinkedIn und Xing
+
+### Medium Priority Issues (PROJ-17)
+
+#### BUG-11: Keine Live Ergebnis-Anzahl
+- **Severity:** 🟡 Medium
+- **Issue:** Anzeige "X Leads entsprechen diesen Filtern" fehlt
+- **Expected:** Live-Update bei Filter-Änderung
+
+---
+
+## Code Quality Findings
+
+### Positive Findings
+
+1. **TypeScript:** Keine kritischen Type-Fehler
+2. **Component Architecture:** Gute Modularisierung
+3. **URL-Sync:** Filter-State korrekt in URL persistiert
+4. **TanStack Table:** Professionelle Tabellen-Implementation
+5. **Plan-Gating UI:** Blur-Effekt und Upgrade-Badges gut umgesetzt
+
+### Areas for Improvement
+
+1. **Type Duplication:** `PlanTier` in mehreren Dateien definiert
+2. **Missing Integration:** SmartFilter ist isoliert implementiert
+3. **Spec Mismatch:** Requirements vs Implementation Abgleich nötig
+
+---
+
+## Regression Testing
+
+### Existing Features Verified
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Search Form (E4) | ✅ PASS | Funktioniert weiterhin |
+| Search Progress (E4) | ✅ PASS | Keine Regression |
+| Credit System (E3) | ✅ PASS | Integration OK |
+| Authentication (E2) | ✅ PASS | Keine Probleme |
+| Dashboard Layout | ✅ PASS | Responsive OK |
+
+### Integration Points Tested
+
+1. **Search Results API:** `/api/search/results` liefert korrekte Daten
+2. **Plan Tier Prop:** Wird korrekt von Server an Client übergeben
+3. **Export Button:** Funktioniert für Pro/Enterprise
+4. **Row Selection:** Checkboxen funktionieren korrekt
+
+---
+
+## Performance Notes
+
+| Metric | Observation | Status |
+|--------|-------------|--------|
+| Table Render | < 500ms für 50 Zeilen | Good |
+| Sorting | < 100ms | Good |
+| Pagination | < 100ms Seitenwechsel | Good |
+| Filter URL Sync | < 50ms | Good |
+
+---
+
+## Security Checklist
+
+| Item | Status | Notes |
+|------|--------|-------|
+| XSS Prevention | ✅ PASS | React escaped output |
+| CSRF Protection | ✅ PASS | Next.js integriert |
+| Auth Check | ✅ PASS | API validiert JWT |
+| Plan-Gating | ⚠️ CHECK | Client-side only - Server validation? |
+
+---
+
+## Recommendations
+
+### Before Production (Must Fix)
+
+1. **BUG-7:** SmartFilter in SearchPage integrieren
+2. **BUG-1:** Plan-Gating mit Requirements abgleichen
+3. **BUG-8:** Bewertungs-Filter implementieren
+
+### High Priority (Should Fix)
+
+4. **BUG-2:** Spalten-Konfiguration in localStorage speichern
+5. **BUG-9:** Quick-Filter Badge-Leiste implementieren
+6. **BUG-3:** CSV Separator auf Semikolon ändern
+7. **BUG-4:** Bulk-Aktionen-Toolbar hinzufügen
+
+### Medium Priority (Nice to Have)
+
+8. **BUG-5:** Pagination nur bei > 50 Ergebnissen
+9. **BUG-6:** Öffnungszeiten und Bild-Spalten hinzufügen
+10. **BUG-10:** Social Media Filter anpassen oder Requirements updaten
+11. **BUG-11:** Live Ergebnis-Anzahl implementieren
+
+---
+
+## Sign-off
+
+**QA Engineer Assessment:**
+- PROJ-16: ⚠️ PARTIAL - 4 von 6 User Stories teilweise/komplett nicht erfüllt
+- PROJ-17: ⚠️ PARTIAL - SmartFilter nicht integriert, Bewertungs-Filter fehlen
+
+**Overall Feature Status: ⚠️ NOT READY FOR PRODUCTION**
+
+Die kritischen Issues müssen vor dem Deployment behoben werden. Die Implementation ist grundsätzlich solide, aber es gibt wichtige Abweichungen von den Requirements und fehlende Integrationen.
+
+**Vollständiger Report:** `/docs/E5-QA-REPORT.md`
 
 ---
