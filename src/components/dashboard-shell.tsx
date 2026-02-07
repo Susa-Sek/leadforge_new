@@ -1,0 +1,127 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar'
+import { Separator } from '@/components/ui/separator'
+import {
+  Search,
+  Users,
+  History,
+  FolderOpen,
+  LayoutDashboard,
+} from 'lucide-react'
+import { UserNav } from '@/components/user-nav'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { CreditProgress } from '@/components/credit-progress'
+import { LowCreditWarning, LowCreditBadge } from '@/components/low-credit-warning'
+
+const navItems = [
+  { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { title: 'Suche', href: '/dashboard/suche', icon: Search },
+  { title: 'CRM', href: '/dashboard/crm', icon: Users },
+  { title: 'Verlauf', href: '/dashboard/verlauf', icon: History },
+  { title: 'Sammlungen', href: '/dashboard/sammlungen', icon: FolderOpen },
+]
+
+type DashboardShellProps = {
+  children: React.ReactNode
+  user: {
+    email: string
+    fullName: string | null
+    avatarUrl: string | null
+  }
+  credits: {
+    remaining: number
+    total: number
+    used: number
+  }
+}
+
+export function DashboardShell({ children, user, credits }: DashboardShellProps) {
+  const pathname = usePathname()
+
+  return (
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader className="p-4">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <span className="text-xl font-bold gradient-text">Manyleads</span>
+          </Link>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {navItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter className="p-4 space-y-3">
+          {/* Low Credit Warning Badge (nur wenn < 10%) */}
+          <LowCreditBadge
+            remaining={credits.remaining}
+            total={credits.total}
+          />
+          {/* Credit Progress Komponent */}
+          <CreditProgress
+            remaining={credits.remaining}
+            total={credits.total}
+            showIcon={true}
+          />
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex h-14 items-center justify-between gap-2 border-b px-4">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            <Separator orientation="vertical" className="h-6" />
+            <h1 className="text-sm font-medium">
+              {navItems.find((item) => item.href === pathname)?.title ?? 'Dashboard'}
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <UserNav user={user} />
+          </div>
+        </header>
+        <main className="flex-1 p-6 space-y-4">
+          {/* Low Credit Warning Banner (prominent im Hauptbereich) */}
+          <LowCreditWarning
+            remaining={credits.remaining}
+            total={credits.total}
+          />
+          {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  )
+}

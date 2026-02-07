@@ -35,6 +35,9 @@ yarn-error.log*
 .claude/settings.local.json
 .mcp.json
 
+# MCP servers (embedded git repos)
+/mcp/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

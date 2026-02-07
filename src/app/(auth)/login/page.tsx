@@ -2,87 +2,165 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Loader2, Mail, Lock } from 'lucide-react'
+import { GoogleButton } from '@/components/auth/google-button'
+import { Separator } from '@/components/ui/separator'
+
+const loginSchema = z.object({
+  email: z.string().email('Bitte gib eine gültige E-Mail-Adresse ein.'),
+  password: z.string().min(1, 'Bitte gib dein Passwort ein.'),
+})
+
+type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  })
+
+  const onSubmit = async (values: LoginFormValues) => {
+    setIsLoading(true)
     setError(null)
+
     const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: values.email,
+      password: values.password,
     })
 
     if (error) {
-      setError(error.message)
+      setError(
+        error.message === 'Invalid login credentials'
+          ? 'E-Mail oder Passwort ist falsch.'
+          : error.message
+      )
+      setIsLoading(false)
     } else {
+      router.refresh()
       router.push('/dashboard')
     }
   }
 
   return (
-    <div className="flex flex-col items-center justify-center">
-      <h1 className="text-3xl font-bold mb-4">Login to Manyleads.io</h1>
-      <p className="text-sm text-muted-foreground mb-6">
-        Enter your credentials to access your account.
-      </p>
-      <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
-        <div>
-          <label htmlFor="email" className="sr-only">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-            placeholder="Email address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+    <Card>
+      <CardHeader className="space-y-1 text-center">
+        <CardTitle className="text-2xl font-bold gradient-text">
+          Anmelden
+        </CardTitle>
+        <CardDescription>
+          Melde dich an, um auf dein Konto zuzugreifen.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>E-Mail</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="name@beispiel.de"
+                        type="email"
+                        autoComplete="email"
+                        className="pl-9"
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Passwort</FormLabel>
+                    <Link
+                      href="/passwort-vergessen"
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Passwort vergessen?
+                    </Link>
+                  </div>
+                  <FormControl>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Dein Passwort"
+                        type="password"
+                        autoComplete="current-password"
+                        className="pl-9"
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Wird angemeldet...
+                </>
+              ) : (
+                'Anmelden'
+              )}
+            </Button>
+          </form>
+        </Form>
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <Separator className="w-full" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">oder</span>
+          </div>
         </div>
-        <div>
-          <label htmlFor="password" className="sr-only">
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        <div>
-          <button
-            type="submit"
-            className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            Sign in
-          </button>
-        </div>
-      </form>
-      <div className="mt-6 text-center text-sm text-gray-600">
-        <p>
-          Don&apos;t have an account?{' '}
-          <a href="/registrieren" className="font-medium text-indigo-600 hover:text-indigo-500">
-            Sign up
-          </a>
+
+        <GoogleButton mode="login" />
+      </CardContent>
+      <CardFooter className="justify-center">
+        <p className="text-sm text-muted-foreground">
+          Noch kein Konto?{' '}
+          <Link href="/registrieren" className="font-medium text-primary hover:underline">
+            Jetzt registrieren
+          </Link>
         </p>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   )
 }
