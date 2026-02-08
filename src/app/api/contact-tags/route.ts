@@ -94,13 +94,21 @@ export async function POST(request: Request) {
       color = '#3B82F6' // Default to blue
     }
 
-    // Check for duplicate tag name
-    const { data: existing } = await supabase
+    // Check for duplicate tag name (case-insensitive)
+    const { data: existing, error: checkError } = await supabase
       .from('contact_tags')
       .select('id')
       .eq('user_id', user.id)
-      .ilike('name', validated.name)
-      .single()
+      .ilike('name', validated.name.trim())
+      .maybeSingle()
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking for duplicate tag:', checkError)
+      return NextResponse.json(
+        { error: 'Fehler beim Überprüfen auf Duplikate' },
+        { status: 500 }
+      )
+    }
 
     if (existing) {
       return NextResponse.json(

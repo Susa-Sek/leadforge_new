@@ -287,13 +287,20 @@ export function useUpdateDeal(id: string) {
   );
 }
 
-// BUG-1 FIX: Use correct SWR key for stage update
-// Key must match useDeal(id) key so the deal revalidates after stage change
-export function useUpdateDealStage(id: string) {
+// BUG FIX: useUpdateDealStage now returns a trigger function that accepts both
+// the deal ID and the update data, allowing proper cache invalidation for all related keys
+export function useUpdateDealStage() {
+  const { mutate: mutatePipeline } = useSWR('pipeline');
+  const { mutate: mutateDeals } = useSWR('deals');
+
   return useSWRMutation(
-    ['deal', id],
-    async (_, { arg }: { arg: UpdateDealStageRequest }) => {
-      return api.updateDealStage(id, arg);
+    'update-deal-stage',
+    async (_, { arg }: { arg: { dealId: string; data: UpdateDealStageRequest } }) => {
+      const result = await api.updateDealStage(arg.dealId, arg.data);
+      // Invalidate all related caches after successful update
+      await mutatePipeline();
+      await mutateDeals();
+      return result;
     }
   );
 }

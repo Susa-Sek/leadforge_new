@@ -20,7 +20,7 @@ import {
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
-import { useCreateContact, useUpdateContact } from '@/hooks/use-crm';
+import { useCreateContact, useUpdateContact, useTags } from '@/hooks/use-crm';
 import { contactSchema, type ContactFormData, defaultContactValues } from '@/lib/crm/schemas';
 import { TagInput } from './tag-input';
 import type { Contact, ContactTag } from '@/lib/crm/types';
@@ -78,13 +78,16 @@ export function ContactForm({ contact, mode }: ContactFormProps) {
     }
   };
 
+  // BUG FIX: Use actual tags from useTags() to map tag IDs to names and colors
+  const { tags: allTags } = useTags();
   const selectedTags = form.watch('tag_ids')?.map((id) => {
-    // Find tag by id - in real implementation this would come from API
-    return {
+    // Look up the actual tag from the tags list
+    const tag = allTags.find((t) => t.id === id);
+    return tag || {
       id,
       user_id: '',
-      name: 'Tag', // Placeholder
-      color: '#3B82F6',
+      name: 'Unbekannt',
+      color: '#6B7280',
       created_at: '',
     } as ContactTag;
   }) || [];

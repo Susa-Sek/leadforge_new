@@ -25,7 +25,7 @@ interface DealPipelineProps {
 
 export function DealPipeline({ dragEnabled = false }: DealPipelineProps) {
   const { columns, mutate, isLoading } = usePipeline();
-  const { trigger: updateStage } = useUpdateDealStage('');
+  const { trigger: updateStage } = useUpdateDealStage();
   const { trigger: deleteDeal } = useDeleteDeal();
 
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -94,12 +94,11 @@ export function DealPipeline({ dragEnabled = false }: DealPipelineProps) {
     } else {
       // Update stage immediately
       try {
-        await updateStage(
-          { stage_id: newStageId } as any,
-          { arg: dealId } as any
-        );
+        await updateStage({
+          dealId,
+          data: { stage_id: newStageId },
+        });
         toast.success('Stage aktualisiert');
-        mutate();
       } catch (error) {
         toast.error('Fehler beim Verschieben');
       }
@@ -120,16 +119,15 @@ export function DealPipeline({ dragEnabled = false }: DealPipelineProps) {
     }
 
     try {
-      await updateStage(
-        {
+      await updateStage({
+        dealId: dealToClose.id,
+        data: {
           stage_id: closingColumn.stage.id,
           is_won: data.is_won,
           close_reason: data.close_reason,
-        } as any,
-        { arg: dealToClose.id } as any
-      );
+        },
+      });
       toast.success(data.is_won ? 'Deal gewonnen!' : 'Deal als verloren markiert');
-      mutate();
     } catch (error) {
       toast.error('Fehler beim Schließen des Deals');
     } finally {

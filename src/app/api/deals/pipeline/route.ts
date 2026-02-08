@@ -69,7 +69,6 @@ export async function GET(request: Request) {
           is_won_stage: stage.is_won_stage,
           is_lost_stage: stage.is_lost_stage,
           is_system: stage.is_system,
-          default_probability: stage.default_probability,
         },
         deals: stageDeals,
         stats: {
