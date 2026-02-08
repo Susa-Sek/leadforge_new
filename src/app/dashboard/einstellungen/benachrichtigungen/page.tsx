@@ -1,8 +1,9 @@
-// Notification Settings Page - Epic E13
+// Notification Settings Page - Epic E13 / E10 Integration
 // Route: /dashboard/einstellungen/benachrichtigungen
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Loader2, Bell, Mail, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -12,43 +13,100 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
-// Placeholder notification types until E10 integration
+// Notification type mapping between UI and API
 const notificationTypes = [
-  {
-    id: 'search_completed',
-    title: 'Suche abgeschlossen',
-    description: 'Erhalten Sie eine Benachrichtigung, wenn eine Suche fertiggestellt ist',
-    defaultEnabled: true,
-  },
-  {
-    id: 'export_ready',
-    title: 'Export fertiggestellt',
-    description: 'Benachrichtigung, wenn ein Datenexport zum Download bereitsteht',
-    defaultEnabled: true,
-  },
-  {
-    id: 'deal_status',
-    title: 'Deal-Status geändert',
-    description: 'Benachrichtigung bei Änderungen an Ihren Deals im CRM',
-    defaultEnabled: true,
-  },
-  {
-    id: 'low_credits',
-    title: 'Credits niedrig',
-    description: 'Warnung, wenn Ihr Credits-Guthaben unter 10 fällt',
-    defaultEnabled: true,
-  },
-  {
-    id: 'system_updates',
-    title: 'System-Updates',
-    description: 'Informationen über neue Funktionen und Wartungsarbeiten',
-    defaultEnabled: false,
-  },
+  { id: 'search_completed', label: 'Suche abgeschlossen', category: 'app' as const },
+  { id: 'export_ready', label: 'Export fertiggestellt', category: 'app' as const },
+  { id: 'deal_status', label: 'Deal-Status geändert', category: 'app' as const },
+  { id: 'low_credits', label: 'Credits niedrig', category: 'app' as const, recommended: true },
+  { id: 'system_updates', label: 'System-Updates', category: 'app' as const },
 ];
 
+interface NotificationPreferences {
+  [key: string]: boolean;
+}
+
 export default function NotificationSettingsPage() {
-  // Placeholder - this would connect to E10 notification preferences API
-  const isLoading = false;
+  const [preferences, setPreferences] = useState<NotificationPreferences>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [emailCritical, setEmailCritical] = useState(true);
+  const [emailMarketing, setEmailMarketing] = useState(false);
+  const [browserNotifications, setBrowserNotifications] = useState(false);
+
+  // Load preferences from E10 API
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const response = await fetch('/api/notifications/preferences');
+        if (!response.ok) throw new Error('Failed to load preferences');
+
+        const data = await response.json();
+
+        // Transform API response to local state
+        const prefs: NotificationPreferences = {};
+        data.preferences?.forEach((p: any) => {
+          if (notificationTypes.some(nt => nt.id === p.notification_type)) {
+            prefs[p.notification_type] = p.in_app_enabled;
+          }
+        });
+
+        setPreferences(prefs);
+
+        // Set email preferences if available
+        const criticalPref = data.preferences?.find((p: any) => p.notification_type === 'low_credits');
+        if (criticalPref) {
+          setEmailCritical(criticalPref.email_enabled);
+        }
+      } catch (error) {
+        console.error('Error loading preferences:', error);
+        toast.error('Fehler beim Laden der Einstellungen');
+
+        // Set defaults on error
+        const defaults: NotificationPreferences = {};
+        notificationTypes.forEach(nt => {
+          defaults[nt.id] = true;
+        });
+        setPreferences(defaults);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPreferences();
+  }, []);
+
+  // Save preference to E10 API
+  const savePreference = async (type: string, enabled: boolean, channel: 'in_app' | 'email' = 'in_app') => {
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/notifications/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notification_type: type,
+          [channel === 'in_app' ? 'in_app_enabled' : 'email_enabled']: enabled,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save');
+      }
+
+      toast.success('Einstellung gespeichert');
+    } catch (error) {
+      console.error('Error saving preference:', error);
+      toast.error('Fehler beim Speichern');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleToggle = (type: string, enabled: boolean) => {
+    setPreferences(prev => ({ ...prev, [type]: enabled }));
+    savePreference(type, enabled, 'in_app');
+  };
 
   if (isLoading) {
     return (
@@ -85,25 +143,36 @@ export default function NotificationSettingsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {isSaving && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Speichern...
+            </div>
+          )}
           {notificationTypes.map((type) => (
             <div key={type.id} className="flex items-start justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <Label htmlFor={type.id} className="font-medium">
-                    {type.title}
+                    {type.label}
                   </Label>
-                  {type.defaultEnabled && (
+                  {type.recommended && (
                     <Badge variant="secondary" className="text-xs">Empfohlen</Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">{type.description}</p>
+                <p className="text-sm text-muted-foreground">
+                  {type.id === 'search_completed' && 'Erhalten Sie eine Benachrichtigung, wenn eine Suche fertiggestellt ist'}
+                  {type.id === 'export_ready' && 'Benachrichtigung, wenn ein Datenexport zum Download bereitsteht'}
+                  {type.id === 'deal_status' && 'Benachrichtigung bei Änderungen an Ihren Deals im CRM'}
+                  {type.id === 'low_credits' && 'Warnung, wenn Ihr Credits-Guthaben unter 10 fällt'}
+                  {type.id === 'system_updates' && 'Informationen über neue Funktionen und Wartungsarbeiten'}
+                </p>
               </div>
               <Switch
                 id={type.id}
-                defaultChecked={type.defaultEnabled}
-                onCheckedChange={() => {
-                  toast.info('Benachrichtigungseinstellungen werden mit E10 integriert');
-                }}
+                checked={preferences[type.id] ?? true}
+                onCheckedChange={(checked) => handleToggle(type.id, checked)}
+                disabled={isSaving}
               />
             </div>
           ))}
@@ -137,8 +206,12 @@ export default function NotificationSettingsPage() {
             </div>
             <Switch
               id="email_critical"
-              defaultChecked={true}
-              disabled
+              checked={emailCritical}
+              onCheckedChange={(checked) => {
+                setEmailCritical(checked);
+                savePreference('low_credits', checked, 'email');
+              }}
+              disabled={isSaving}
             />
           </div>
           <div className="flex items-start justify-between">
@@ -152,10 +225,9 @@ export default function NotificationSettingsPage() {
             </div>
             <Switch
               id="email_marketing"
-              defaultChecked={false}
-              onCheckedChange={() => {
-                toast.info('E-Mail-Einstellungen werden mit E10 integriert');
-              }}
+              checked={emailMarketing}
+              onCheckedChange={setEmailMarketing}
+              disabled={isSaving}
             />
           </div>
         </CardContent>
@@ -188,10 +260,8 @@ export default function NotificationSettingsPage() {
             </div>
             <Switch
               id="browser_notifications"
-              defaultChecked={false}
-              onCheckedChange={() => {
-                toast.info('Browser-Benachrichtigungen werden mit E10 integriert');
-              }}
+              checked={browserNotifications}
+              onCheckedChange={setBrowserNotifications}
             />
           </div>
         </CardContent>
