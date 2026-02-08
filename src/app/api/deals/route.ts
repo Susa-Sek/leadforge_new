@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { rateLimitMiddleware, getRateLimitHeaders, RATE_LIMITS } from '@/lib/rate-limit'
 
 const DealSchema = z.object({
   title: z.string().min(1, 'Titel ist erforderlich').max(200, 'Titel zu lang'),
@@ -42,6 +43,15 @@ export async function GET(request: Request) {
       return NextResponse.json(
         { error: 'Nicht authentifiziert' },
         { status: 401 }
+      )
+    }
+
+    // Rate limiting check
+    const rateLimitResult = await rateLimitMiddleware(user.id, 'deals', RATE_LIMITS.deals)
+    if (rateLimitResult) {
+      return NextResponse.json(
+        { error: rateLimitResult.error },
+        { status: rateLimitResult.status, headers: rateLimitResult.headers }
       )
     }
 
@@ -137,6 +147,10 @@ export async function GET(request: Request) {
       )
     }
 
+    // Check rate limit for headers
+    const { checkRateLimit } = await import('@/lib/rate-limit')
+    const rateLimitInfo = await checkRateLimit(user.id, 'deals', RATE_LIMITS.deals)
+
     return NextResponse.json({
       deals: deals || [],
       pagination: {
@@ -145,7 +159,7 @@ export async function GET(request: Request) {
         total: count || 0,
         total_pages: Math.ceil((count || 0) / filters.per_page),
       }
-    })
+    }, { headers: getRateLimitHeaders(rateLimitInfo, RATE_LIMITS.deals) })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -171,6 +185,15 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Nicht authentifiziert' },
         { status: 401 }
+      )
+    }
+
+    // Rate limiting check for deal creation (stricter limit)
+    const rateLimitResult = await rateLimitMiddleware(user.id, 'dealCreate', RATE_LIMITS.dealCreate)
+    if (rateLimitResult) {
+      return NextResponse.json(
+        { error: rateLimitResult.error },
+        { status: rateLimitResult.status, headers: rateLimitResult.headers }
       )
     }
 
@@ -267,10 +290,14 @@ export async function POST(request: Request) {
       .eq('id', deal!.id)
       .single()
 
+    // Get rate limit headers for successful creation
+    const { checkRateLimit } = await import('@/lib/rate-limit')
+    const rateLimitInfo = await checkRateLimit(user.id, 'dealCreate', RATE_LIMITS.dealCreate)
+
     return NextResponse.json({
       deal: completeDeal || deal,
       message: 'Deal erfolgreich erstellt'
-    }, { status: 201 })
+    }, { status: 201, headers: getRateLimitHeaders(rateLimitInfo, RATE_LIMITS.dealCreate) })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

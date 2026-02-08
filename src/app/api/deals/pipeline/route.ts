@@ -3,6 +3,7 @@
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { rateLimitMiddleware, getRateLimitHeaders, RATE_LIMITS } from '@/lib/rate-limit'
 
 export async function GET(request: Request) {
   try {
@@ -14,6 +15,15 @@ export async function GET(request: Request) {
       return NextResponse.json(
         { error: 'Nicht authentifiziert' },
         { status: 401 }
+      )
+    }
+
+    // Rate limiting check (higher limit for pipeline - used for drag & drop)
+    const rateLimitResult = await rateLimitMiddleware(user.id, 'pipeline', RATE_LIMITS.pipeline)
+    if (rateLimitResult) {
+      return NextResponse.json(
+        { error: rateLimitResult.error },
+        { status: rateLimitResult.status, headers: rateLimitResult.headers }
       )
     }
 
@@ -103,10 +113,14 @@ export async function GET(request: Request) {
         : 0,
     }
 
+    // Check rate limit for headers
+    const { checkRateLimit } = await import('@/lib/rate-limit')
+    const rateLimitInfo = await checkRateLimit(user.id, 'pipeline', RATE_LIMITS.pipeline)
+
     return NextResponse.json({
       pipeline: pipelineData,
       stats: overallStats,
-    })
+    }, { headers: getRateLimitHeaders(rateLimitInfo, RATE_LIMITS.pipeline) })
   } catch (error) {
     console.error('Error in pipeline GET:', error)
     return NextResponse.json(

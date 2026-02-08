@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { rateLimitMiddleware, getRateLimitHeaders, RATE_LIMITS } from '@/lib/rate-limit'
 
 // Validation schemas
 const ContactSchema = z.object({
@@ -37,6 +38,15 @@ export async function GET(request: Request) {
       return NextResponse.json(
         { error: 'Nicht authentifiziert' },
         { status: 401 }
+      )
+    }
+
+    // Rate limiting check
+    const rateLimitResult = await rateLimitMiddleware(user.id, 'contacts', RATE_LIMITS.contacts)
+    if (rateLimitResult) {
+      return NextResponse.json(
+        { error: rateLimitResult.error },
+        { status: rateLimitResult.status, headers: rateLimitResult.headers }
       )
     }
 
@@ -100,6 +110,10 @@ export async function GET(request: Request) {
       tags: contact.tags?.map((t: any) => t.tag).filter(Boolean) || []
     })) || []
 
+    // Check rate limit for headers
+    const { checkRateLimit } = await import('@/lib/rate-limit')
+    const rateLimitInfo = await checkRateLimit(user.id, 'contacts', RATE_LIMITS.contacts)
+
     return NextResponse.json({
       contacts: transformedContacts,
       pagination: {
@@ -108,7 +122,7 @@ export async function GET(request: Request) {
         total: count || 0,
         total_pages: Math.ceil((count || 0) / filters.per_page),
       }
-    })
+    }, { headers: getRateLimitHeaders(rateLimitInfo, RATE_LIMITS.contacts) })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -134,6 +148,15 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Nicht authentifiziert' },
         { status: 401 }
+      )
+    }
+
+    // Rate limiting check for contact creation (stricter limit)
+    const rateLimitResult = await rateLimitMiddleware(user.id, 'contactCreate', RATE_LIMITS.contactCreate)
+    if (rateLimitResult) {
+      return NextResponse.json(
+        { error: rateLimitResult.error },
+        { status: rateLimitResult.status, headers: rateLimitResult.headers }
       )
     }
 
@@ -222,10 +245,14 @@ export async function POST(request: Request) {
       tags: completeContact.tags?.map((t: any) => t.tag).filter(Boolean) || []
     } : contact
 
+    // Get rate limit headers for successful creation
+    const { checkRateLimit } = await import('@/lib/rate-limit')
+    const rateLimitInfo = await checkRateLimit(user.id, 'contactCreate', RATE_LIMITS.contactCreate)
+
     return NextResponse.json({
       contact: transformedContact,
       message: 'Kontakt erfolgreich erstellt'
-    }, { status: 201 })
+    }, { status: 201, headers: getRateLimitHeaders(rateLimitInfo, RATE_LIMITS.contactCreate) })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
