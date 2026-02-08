@@ -45,14 +45,14 @@
 - [ ] Anzahl der gefilterten Ergebnisse wird live aktualisiert
 
 **Filter-Felder:**
-| Feld | Optionen |
-|------|----------|
-| Instagram | Ja / Nein / Egal |
-| Facebook | Ja / Nein / Egal |
-| LinkedIn | Ja / Nein / Egal |
-| YouTube | Ja / Nein / Egal |
-| TikTok | Ja / Nein / Egal |
-| Twitter/X | Ja / Nein / Egal |
+| Feld | Optionen | Status |
+|------|----------|--------|
+| Instagram | Ja / Nein / Egal | ✅ FIXED 2026-02-08 |
+| Facebook | Ja / Nein / Egal | ✅ FIXED 2026-02-08 |
+| LinkedIn | Ja / Nein / Egal | ✅ |
+| YouTube | Ja / Nein / Egal | ✅ FIXED 2026-02-08 |
+| TikTok | Ja / Nein / Egal | ✅ FIXED 2026-02-08 |
+| Twitter/X | Ja / Nein / Egal | ✅ FIXED 2026-02-08 |
 
 ### Bewertungs-Filter (US-17.3)
 - [ ] Slider für Min-Bewertung (1.0 - 5.0)
@@ -122,6 +122,87 @@ Alle Filter werden UND-verknüpft:
 | **Page-Reload mit Filter-URL** | Filter-State wird aus URL wiederhergestellt |
 | **Plan-Downgrade mit aktiven Smart-Filtern** | Filter werden zurückgesetzt, Hinweis anzeigen |
 | **Mobile: Filter-Panel** | Full-Screen Modal statt Slide-over |
+
+### Additional Edge Cases - Filter Input & Validation
+
+| ID | Scenario | Beschreibung | Erwartetes Verhalten | Fehlermeldung |
+|----|----------|--------------|---------------------|---------------|
+| **EC-FILTER-01** | Ungültige URL-Parameter | User manipuliert URL mit `rating_min=abc` oder `rating_min=999` | Invalid Parameter ignorieren, Standard-Werte verwenden, URL korrigieren | - |
+| **EC-FILTER-02** | Min > Max bei Range-Filtern | User setzt Min-Bewertung auf 4.0 und Max auf 2.0 | Automatische Korrektur: Max = Min + 1.0, visuelles Feedback | "Maximalwert wurde angepasst" |
+| **EC-FILTER-03** | Negative Werte bei Bewertungen | URL enthält `rating_min=-5` | Clamping auf validen Bereich (0-5), URL korrigieren | - |
+| **EC-FILTER-04** | Gleichzeitige Filter-Änderungen | User ändert 3 Filter schnell hintereinander (< 100ms) | Debounced Updates, nur letzter Zustand in URL, keine Race Conditions | - |
+| **EC-FILTER-05** | Filter-Reset während Animation | User klickt "Zurücksetzen" während Filter-Panel schließt | Animation abbrechen, sofortiger Reset, Panel bleibt offen | - |
+| **EC-FILTER-06** | Leere Multi-Select-Filter | User wählt in Branchen-Filter nichts aus | Als "Egal" behandeln, kein Filter aktiv | - |
+| **EC-FILTER-07** | Zu viele Multi-Select-Optionen | User wählt 50+ Branchen gleichzeitig | Limit auf 20 Optionen, Hinweis anzeigen | "Maximal 20 Branchen auswählbar" |
+| **EC-FILTER-08** | SQL-Injection in Filter-Parametern | URL enthält `industry='; DROP TABLE leads; --` | Parameter sanitizen, keine Raw-Queries, Prepared Statements verwenden | - |
+| **EC-FILTER-09** | XSS-versuch über Filter-Werte | URL enthält `website=<script>alert('xss')</script>` | HTML-Escaping, keine Ausführung von User-Input | - |
+| **EC-FILTER-10** | Emoji in Suchbegriffen | User filtert nach Firmen mit Emojis im Namen | Unicode-Support, korrekte URL-Encoding/Decoding | - |
+
+### Additional Edge Cases - Filter State & Persistence
+
+| ID | Scenario | Beschreibung | Erwartetes Verhalten | Fehlermeldung |
+|----|----------|--------------|---------------------|---------------|
+| **EC-STATE-01** | URL-Parameter > 2000 Zeichen (IE Limit) | Zu viele aktive Filter für URL | Kürzung auf wichtigste Filter, Rest in localStorage oder Hinweis | "Zu viele Filter aktiv. Einige wurden entfernt." |
+| **EC-STATE-02** | Korrupte localStorage-Daten | User hat manuell localStorage manipuliert | Daten validieren, bei Fehler: Reset auf Defaults | - |
+| **EC-STATE-03** | Session-Storage vs LocalStorage Konflikt | Filter in beiden Speichern unterschiedlich | Priorität: URL > SessionStorage > LocalStorage > Defaults | - |
+| **EC-STATE-04** | Filter-State von anderem User | User A teilt URL mit Filter-State an User B | Filter-State übernehmen, aber nur Filter anwenden die User B darf nutzen | - |
+| **EC-STATE-05** | Veraltete Filter-Version | URL enthält Filter-Namen die nicht mehr existieren (Refactoring) | Unknown Filter ignorieren, bekannte Filter anwenden | - |
+| **EC-STATE-06** | Filter-State bei Logout/Login | User hat Filter aktiv, loggt aus, anderer User loggt ein | Filter zurücksetzen (keine User-Überlappung), neue Session | - |
+| **EC-STATE-07** | Browser-History überladen | Jeder Filter-Change pusht History-State | Replace State verwenden statt Push, nur explizite Actions pushen | - |
+| **EC-STATE-08** | Mehrere Suchen gleichzeitig | User öffnet 2 Suchen in verschiedenen Tabs mit verschiedenen Filtern | Jede Suche hat eigenen Filter-State (searchId-basiert) | - |
+
+### Additional Edge Cases - Performance & Race Conditions
+
+| ID | Scenario | Beschreibung | Erwartetes Verhalten | Fehlermeldung |
+|----|----------|--------------|---------------------|---------------|
+| **EC-PERF-01** | 10.000+ Leads filtern | Sehr große Ergebnismenge | Virtualisierung, Web Worker für Filter-Berechnung, Progress-Indicator | "Große Datenmenge wird verarbeitet..." |
+| **EC-PERF-02** | Schnelle Filter-Wechsel | User toggelt Filter schnell (>5x/Sekunde) | Debounce 300ms, Cancel vorheriger Berechnungen | - |
+| **EC-PERF-03** | Memory-Leak bei Filter-Updates | User lässt Tab mit aktivem Filter offen für Stunden | Cleanup on Unmount, keine ständigen Recalculations | - |
+| **EC-PERF-04** | Mobile mit langsamer CPU | Günstiges Android-Gerät mit komplexen Filtern | Optimierte Filter-Logik, kein Blocking der UI, Web Worker | - |
+| **EC-PERF-05** | Filter-Berechnung > 1 Sekunde | Komplexe Filter-Kombination auf großen Daten | Loading-Indicator für Filter-Anwendung, Cancel-Option | "Filter werden angewendet..." |
+| **EC-PERF-06** | Race Condition: Filter vs Daten-Laden | Filter wird gesetzt bevor Daten fertig geladen | Filter nach Laden anwenden, oder Pending-Filter-State | - |
+| **EC-PERF-07** | Gleichzeitige API-Filter und Client-Filter | Backend liefert gefilterte Daten, Client filtert weiter | Klare Trennung, keine doppelte Filterung, API-Filter priorisieren | - |
+
+### Additional Edge Cases - Plan Gating & Permissions
+
+| ID | Scenario | Beschreibung | Erwartetes Verhalten | Fehlermeldung |
+|----|----------|--------------|---------------------|---------------|
+| **EC-PLAN-01** | Free-User manipuliert URL zu Pro-Filtern | User fügt `linkedin=ja` zur URL hinzu | Filter ignorieren, Hinweis anzeigen, URL korrigieren | "Dieser Filter ist nur für Pro-Nutzer verfügbar." |
+| **EC-PLAN-02** | Plan ändert sich während Filter-Panel offen | Subscription läuft ab während User Filter einstellt | Panel schließen, Filter resetten, Upgrade-Prompt | "Ihr Abonnement ist abgelaufen." |
+| **EC-PLAN-03** | Trial-User mit Pro-Filtern | User ist im Trial, nutzt Pro-Filter, Trial endet | Nach Trial-Ende: Pro-Filter deaktivieren, Standard-Filter behalten | "Pro-Filter sind nach dem Trial nicht mehr verfügbar." |
+| **EC-PLAN-04** | Team-Mitglied mit eingeschränkten Rechten | User ist in Team aber hat keine Filter-Berechtigung | Filter-UI nicht anzeigen oder deaktiviert mit Tooltip | "Sie haben keine Berechtigung für erweiterte Filter." |
+| **EC-PLAN-05** | Enterprise-Filter auf Pro-Account | URL enthält Enterprise-spezifische Filter | Als "Egal" behandeln, Hinweis auf Upgrade | "Dieser Filter ist nur für Enterprise verfügbar." |
+
+### Additional Edge Cases - UI/UX Edge Cases
+
+| ID | Scenario | Beschreibung | Erwartetes Verhalten | Fehlermeldung |
+|----|----------|--------------|---------------------|---------------|
+| **EC-UI-01** | Filter-Panel bei sehr kleinen Viewports | Viewport < 320px (alte Smartphones) | Full-Screen Modal mit Scroll, abgespeckte Darstellung | - |
+| **EC-UI-02** | Touch-Gesten auf Mobile | User swiped auf Slider, aber vertikal scrollt auch | Touch-Event-Handling korrigieren, keine doppelte Interaktion | - |
+| **EC-UI-03** | Tastatur-Navigation durch Filter | User nutzt Tab/Enter/Space für Filter | Vollständige Tastatur-Unterstützung, Fokus-Indikatoren | - |
+| **EC-UI-04** | Screen Reader mit dynamischen Filter-Updates | Screen Reader User ändert Filter | ARIA-Live-Regions für Filter-Anzahl, ausreichende Beschreibungen | - |
+| **EC-UI-05** | Filter-Chips überlaufen Container | Sehr viele aktive Filter (20+) | Zeilenumbruch oder "+X weitere" Pattern | - |
+| **EC-UI-06** | Range-Slider mit unterschiedlichen Steps | Min=0, Max=1000, Step=1 vs Step=10 | Klare Step-Definition, Snapping-Verhalten dokumentieren | - |
+| **EC-UI-07** | Hover-States auf Touch-Geräten | User tippt auf Desktop-optimierten Filter | Touch-freundliche Alternativen (Tap statt Hover) | - |
+
+### Additional Edge Cases - Filter Results Edge Cases
+
+| ID | Scenario | Beschreibung | Erwartetes Verhalten | Fehlermeldung |
+|----|----------|--------------|---------------------|---------------|
+| **EC-RESULT-01** | Filter ergibt genau 1 Ergebnis | Kombination aus strengen Filtern | "1 Lead gefunden" anzeigen, keine Pagination | - |
+| **EC-RESULT-02** | Filter ergibt exakt Page-Limit | Z.B. genau 50 Ergebnisse bei 50/Page | Pagination trotzdem anzeigen (für Konsistenz), "Seite 1 von 1" | - |
+| **EC-RESULT-03** | Aktive Filter + Suche mit 0 Ergebnissen | User filtert auf leere Ergebnismenge | "Keine Ergebnisse mit diesen Filtern", Vorschlag Filter lockern | "Versuchen Sie weniger Filter oder andere Kombinationen" |
+| **EC-RESULT-04** | Filter-Anzahl-Anzeige inkonsistent | Berechnung zeigt X, aber Liste zeigt Y | Consistent counting, Überprüfung der Logik | - |
+| **EC-RESULT-05** | Sortierung nach gefilterten Daten | User sortiert nach Rating, aber Rating-Filter ist aktiv | Sortierung auf gefilterte Daten anwenden, konsistentes Verhalten | - |
+| **EC-RESULT-06** | Filter auf Paginierter Seite | User ist auf Seite 5, aktiviert strengen Filter | Zurück zu Seite 1 springen, da neue Filter weniger Ergebnisse | - |
+
+### Additional Edge Cases - Data Synchronization
+
+| ID | Scenario | Beschreibung | Erwartetes Verhalten | Fehlermeldung |
+|----|----------|--------------|---------------------|---------------|
+| **EC-SYNC-01** | Daten ändern sich während Filter aktiv | Backend aktualisiert Leads während User filtert | Keine Live-Updates, Daten bleiben konsistent für Session | - |
+| **EC-SYNC-02** | Filter auf veraltete Daten anwenden | Cache ist veraltet, neue Daten verfügbar | "Neue Daten verfügbar"-Button, kein automatisches Reload | "Neue Leads verfügbar. Daten aktualisieren?" |
+| **EC-SYNC-03** | Gleichzeitige Filter von mehreren Usern | Team-Kollege filtert gleiche Suche anders | Keine Synchronisation, jeder User hat eigenen View | - |
 
 ---
 

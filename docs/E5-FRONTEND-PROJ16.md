@@ -226,6 +226,29 @@ type PlanTier = 'free' | 'pro' | 'enterprise'
 - [ ] Empty State wird angezeigt bei leeren Ergebnissen
 - [ ] Loading State zeigt Skeleton
 
+### Edge Cases für Testing
+
+| ID | Scenario | Test-Schritt | Erwartetes Ergebnis |
+|----|----------|--------------|---------------------|
+| **EC-01** | Leerer/null Firmenname | API liefert `name: null` | Anzeige als "[Unbekannte Firma]" |
+| **EC-02** | Sehr lange Firmennamen | Name mit 200+ Zeichen | Truncation mit "...", Tooltip zeigt vollständig |
+| **EC-03** | Negative Bewertungen | Rating: -2 oder 8 | Clamping auf 0-5, korrekte Sterne-Anzeige |
+| **EC-04** | API Timeout | Netzwerk drosseln auf 3G | Timeout nach 30s, Retry-Button |
+| **EC-05** | API 500 Error | Server Fehler simulieren | Error-State, keine leere Tabelle |
+| **EC-06** | LocalStorage voll | Speicher füllen vor Test | Tabelle funktioniert, Config nicht persistiert |
+| **EC-07** | Session Timeout | Cookie löschen während Nutzung | Redirect zu Login, Return-URL erhalten |
+| **EC-08** | Sortierung während Loading | Schnell mehrmals klicken | Nur letzter Klick verarbeitet (Debounced) |
+| **EC-09** | Export mit 0 Auswahl | Export ohne Zeilen-Auswahl | Alle sichtbaren Leads exportiert |
+| **EC-10** | CSV mit Sonderzeichen | Firmenname: `Muster;GmbH\n"Test"` | Korrektes CSV-Escaping |
+| **EC-11** | Alle Zeilen auswählen | Checkbox im Header klicken | Alle sichtbaren Zeilen ausgewählt |
+| **EC-12** | Multi-Tab Auswahl | Tab 2 öffnen, Auswahl in Tab 1 | Tab 2 zeigt keine Auswahl (isoliert) |
+| **EC-13** | Mobile Scroll | iOS Safari, Seite wechseln | Scroll-Position bleibt erhalten |
+| **EC-14** | Plan Upgrade während Session | Upgrade durchführen, Tab offen lassen | Neue Berechtigungen sofort aktiv |
+| **EC-15** | Print Mode | Ctrl+P auf Ergebnisseite | Print-optimierte Darstellung |
+| **EC-16** | Keyboard Navigation | Tab-Taste durch Tabelle | Alle Interaktiven Elemente erreichbar |
+| **EC-17** | Screen Reader | NVDA/VoiceOver testen | Korrekte Ankündigungen für Änderungen |
+| **EC-18** | Resize Window | Fenstergröße ändern | Responsive Breakpoints funktionieren |
+
 ---
 
 ## Bekannte Limitationen

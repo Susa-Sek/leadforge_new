@@ -21,7 +21,12 @@ import {
   Globe,
   Mail,
   Phone,
+  Instagram,
+  Facebook,
   Linkedin,
+  Youtube,
+  Music2,
+  Twitter,
   Building2,
   Users,
   MapPin,
@@ -48,8 +53,13 @@ export interface SmartFilterState {
   hasWebsite: FilterState
   hasEmail: FilterState
   hasPhone: FilterState
+  // BUG-10 FIX: Correct social media networks per PROJ-17 spec
+  hasInstagram: FilterState
+  hasFacebook: FilterState
   hasLinkedIn: FilterState
-  hasXing: FilterState
+  hasYouTube: FilterState
+  hasTikTok: FilterState
+  hasTwitter: FilterState
   industries: string[]
   employeeCount: { min: number; max: number }
   revenue: { min: number; max: number }
@@ -64,8 +74,13 @@ export const DEFAULT_FILTER_STATE: SmartFilterState = {
   hasWebsite: 'any',
   hasEmail: 'any',
   hasPhone: 'any',
+  // BUG-10 FIX: Correct social media networks per PROJ-17 spec
+  hasInstagram: 'any',
+  hasFacebook: 'any',
   hasLinkedIn: 'any',
-  hasXing: 'any',
+  hasYouTube: 'any',
+  hasTikTok: 'any',
+  hasTwitter: 'any',
   industries: [],
   employeeCount: { min: 1, max: 1000 },
   revenue: { min: 0, max: 100 },
@@ -134,8 +149,13 @@ export function SmartFilter({
       hasWebsite: getParam('f_web', 'any'),
       hasEmail: getParam('f_email', 'any'),
       hasPhone: getParam('f_phone', 'any'),
+      // BUG-10 FIX: Parse correct social media filters from URL
+      hasInstagram: getParam('f_instagram', 'any'),
+      hasFacebook: getParam('f_facebook', 'any'),
       hasLinkedIn: getParam('f_linkedin', 'any'),
-      hasXing: getParam('f_xing', 'any'),
+      hasYouTube: getParam('f_youtube', 'any'),
+      hasTikTok: getParam('f_tiktok', 'any'),
+      hasTwitter: getParam('f_twitter', 'any'),
       industries: searchParams.get('f_industry')?.split(',').filter(Boolean) || [],
       employeeCount: getRangeParam('f_emp', 1, 1000),
       revenue: getRangeParam('f_rev', 0, 100),
@@ -167,8 +187,13 @@ export function SmartFilter({
       setParam('f_web', newFilters.hasWebsite, 'any')
       setParam('f_email', newFilters.hasEmail, 'any')
       setParam('f_phone', newFilters.hasPhone, 'any')
+      // BUG-10 FIX: Update URL with correct social media filters
+      setParam('f_instagram', newFilters.hasInstagram, 'any')
+      setParam('f_facebook', newFilters.hasFacebook, 'any')
       setParam('f_linkedin', newFilters.hasLinkedIn, 'any')
-      setParam('f_xing', newFilters.hasXing, 'any')
+      setParam('f_youtube', newFilters.hasYouTube, 'any')
+      setParam('f_tiktok', newFilters.hasTikTok, 'any')
+      setParam('f_twitter', newFilters.hasTwitter, 'any')
 
       // Multi-select
       if (newFilters.industries.length > 0) {
@@ -263,8 +288,13 @@ export function SmartFilter({
     if (filters.hasWebsite !== 'any') count++
     if (filters.hasEmail !== 'any') count++
     if (filters.hasPhone !== 'any') count++
+    // BUG-10 FIX: Count correct social media filters
+    if (filters.hasInstagram !== 'any') count++
+    if (filters.hasFacebook !== 'any') count++
     if (filters.hasLinkedIn !== 'any') count++
-    if (filters.hasXing !== 'any') count++
+    if (filters.hasYouTube !== 'any') count++
+    if (filters.hasTikTok !== 'any') count++
+    if (filters.hasTwitter !== 'any') count++
     if (filters.industries.length > 0) count++
     if (filters.employeeCount.min !== 1 || filters.employeeCount.max !== 1000) count++
     if (filters.revenue.min !== 0 || filters.revenue.max !== 100) count++
@@ -309,6 +339,27 @@ export function SmartFilter({
       })
     }
 
+    // BUG-10 FIX: Show correct social media active filters
+    if (filters.hasInstagram !== 'any') {
+      list.push({
+        id: 'instagram',
+        label: 'Instagram',
+        value: filters.hasInstagram === 'yes' ? 'Ja' : 'Nein',
+        type: 'toggle',
+        state: filters.hasInstagram,
+      })
+    }
+
+    if (filters.hasFacebook !== 'any') {
+      list.push({
+        id: 'facebook',
+        label: 'Facebook',
+        value: filters.hasFacebook === 'yes' ? 'Ja' : 'Nein',
+        type: 'toggle',
+        state: filters.hasFacebook,
+      })
+    }
+
     if (filters.hasLinkedIn !== 'any') {
       list.push({
         id: 'linkedin',
@@ -319,13 +370,33 @@ export function SmartFilter({
       })
     }
 
-    if (filters.hasXing !== 'any') {
+    if (filters.hasYouTube !== 'any') {
       list.push({
-        id: 'xing',
-        label: 'Xing',
-        value: filters.hasXing === 'yes' ? 'Ja' : 'Nein',
+        id: 'youtube',
+        label: 'YouTube',
+        value: filters.hasYouTube === 'yes' ? 'Ja' : 'Nein',
         type: 'toggle',
-        state: filters.hasXing,
+        state: filters.hasYouTube,
+      })
+    }
+
+    if (filters.hasTikTok !== 'any') {
+      list.push({
+        id: 'tiktok',
+        label: 'TikTok',
+        value: filters.hasTikTok === 'yes' ? 'Ja' : 'Nein',
+        type: 'toggle',
+        state: filters.hasTikTok,
+      })
+    }
+
+    if (filters.hasTwitter !== 'any') {
+      list.push({
+        id: 'twitter',
+        label: 'Twitter',
+        value: filters.hasTwitter === 'yes' ? 'Ja' : 'Nein',
+        type: 'toggle',
+        state: filters.hasTwitter,
       })
     }
 
@@ -403,11 +474,24 @@ export function SmartFilter({
         case 'phone':
           updates.hasPhone = 'any'
           break
+        // BUG-10 FIX: Handle correct social media filter removal
+        case 'instagram':
+          updates.hasInstagram = 'any'
+          break
+        case 'facebook':
+          updates.hasFacebook = 'any'
+          break
         case 'linkedin':
           updates.hasLinkedIn = 'any'
           break
-        case 'xing':
-          updates.hasXing = 'any'
+        case 'youtube':
+          updates.hasYouTube = 'any'
+          break
+        case 'tiktok':
+          updates.hasTikTok = 'any'
+          break
+        case 'twitter':
+          updates.hasTwitter = 'any'
           break
         case 'industries':
           updates.industries = []
@@ -516,17 +600,37 @@ export function SmartFilter({
 
           <Separator />
 
-          {/* Pro Filters */}
+          {/* BUG-10 FIX: Pro Social Media Filters */}
           <div className="space-y-4">
             <h4 className="text-sm font-semibold flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-blue-500" />
-              Pro-Filter
+              Social Media Filter
               {!hasProAccess && (
                 <Badge variant="secondary" className="text-xs">
                   Pro
                 </Badge>
               )}
             </h4>
+
+            <div className={cn(!hasProAccess && 'opacity-75')}>
+              <FilterToggleGroup
+                label="Hat Instagram"
+                description="Nur Firmen mit Instagram-Profil"
+                value={filters.hasInstagram}
+                onChange={(value) => handleFilterChange({ hasInstagram: value })}
+                disabled={!hasProAccess}
+              />
+            </div>
+
+            <div className={cn(!hasProAccess && 'opacity-75')}>
+              <FilterToggleGroup
+                label="Hat Facebook"
+                description="Nur Firmen mit Facebook-Seite"
+                value={filters.hasFacebook}
+                onChange={(value) => handleFilterChange({ hasFacebook: value })}
+                disabled={!hasProAccess}
+              />
+            </div>
 
             <div className={cn(!hasProAccess && 'opacity-75')}>
               <FilterToggleGroup
@@ -540,10 +644,30 @@ export function SmartFilter({
 
             <div className={cn(!hasProAccess && 'opacity-75')}>
               <FilterToggleGroup
-                label="Hat Xing"
-                description="Nur Firmen mit Xing-Profil"
-                value={filters.hasXing}
-                onChange={(value) => handleFilterChange({ hasXing: value })}
+                label="Hat YouTube"
+                description="Nur Firmen mit YouTube-Kanal"
+                value={filters.hasYouTube}
+                onChange={(value) => handleFilterChange({ hasYouTube: value })}
+                disabled={!hasProAccess}
+              />
+            </div>
+
+            <div className={cn(!hasProAccess && 'opacity-75')}>
+              <FilterToggleGroup
+                label="Hat TikTok"
+                description="Nur Firmen mit TikTok-Profil"
+                value={filters.hasTikTok}
+                onChange={(value) => handleFilterChange({ hasTikTok: value })}
+                disabled={!hasProAccess}
+              />
+            </div>
+
+            <div className={cn(!hasProAccess && 'opacity-75')}>
+              <FilterToggleGroup
+                label="Hat Twitter"
+                description="Nur Firmen mit Twitter/X-Profil"
+                value={filters.hasTwitter}
+                onChange={(value) => handleFilterChange({ hasTwitter: value })}
                 disabled={!hasProAccess}
               />
             </div>
@@ -743,8 +867,13 @@ export function useSmartFilter() {
     if (filters.hasWebsite !== 'any') count++
     if (filters.hasEmail !== 'any') count++
     if (filters.hasPhone !== 'any') count++
+    // BUG-10 FIX: Count correct social media filters
+    if (filters.hasInstagram !== 'any') count++
+    if (filters.hasFacebook !== 'any') count++
     if (filters.hasLinkedIn !== 'any') count++
-    if (filters.hasXing !== 'any') count++
+    if (filters.hasYouTube !== 'any') count++
+    if (filters.hasTikTok !== 'any') count++
+    if (filters.hasTwitter !== 'any') count++
     if (filters.industries.length > 0) count++
     if (filters.employeeCount.min !== 1 || filters.employeeCount.max !== 1000) count++
     if (filters.revenue.min !== 0 || filters.revenue.max !== 100) count++

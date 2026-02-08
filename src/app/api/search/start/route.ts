@@ -19,6 +19,7 @@ import {
   type StartSearchError,
 } from '@/lib/search/validation'
 import { ApifyClient } from '@/lib/apify/client'
+import { notifySearchComplete, notifySearchFailed } from '@/lib/notifications/integrations'
 
 export async function POST(request: Request) {
   console.log('[API /search/start] Received request')
@@ -354,11 +355,16 @@ async function processMockWebhook(
   datasetId: string,
   includeEnrichment: boolean
 ) {
+  // Declare variables outside try block for catch block access
+  let searchData: { user_id: string; max_results: number; search_query: string } | null = null
+  let searchDataLocal: { user_id: string; max_results: number; search_query: string } | null = null
+  let supabase: Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient>> | null = null
+
   try {
     const { getDatasetItems, getMockEnrichmentResults } = await import('@/lib/apify/client')
     const { createClient } = await import('@/lib/supabase/server')
 
-    const supabase = await createClient()
+    supabase = await createClient()
 
     // Get mock data
     const items = await getDatasetItems(datasetId)
@@ -398,17 +404,22 @@ async function processMockWebhook(
     // Simulate deduplication delay
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    // Get search details for user_id
-    const { data: searchData } = await supabase
+    // Get search details for user_id and search query
+    const { data: searchDataResult } = await supabase
       .from('search_history')
-      .select('user_id, max_results')
+      .select('user_id, max_results, search_query')
       .eq('id', searchId)
       .single()
+
+    searchData = searchDataResult
 
     if (!searchData) {
       console.error('[MOCK] Search not found:', searchId)
       return
     }
+
+    // Store searchData in local const for type narrowing
+    searchDataLocal = searchData
 
     // Map and save results
     const typedItems = items as Record<string, unknown>[]
@@ -418,7 +429,7 @@ async function processMockWebhook(
 
       return {
         search_history_id: searchId,
-        user_id: searchData.user_id,
+        user_id: searchDataLocal!.user_id,
         company_name: String(item.title || `Unternehmen ${index + 1}`),
         address: String(item.address || ''),
         phone: item.phone ? String(item.phone) : null,
@@ -453,14 +464,36 @@ async function processMockWebhook(
       p_apify_cost_usd: 0,
     })
 
+    // Send notification to user
+    if (searchData && searchDataLocal && supabase) {
+      await notifySearchComplete(
+        supabase,
+        searchDataLocal!.user_id,
+        searchId,
+        searchDataLocal!.search_query || 'Suche',
+        items.length
+      )
+    }
+
     console.log('[MOCK] Search completed:', searchId)
   } catch (error) {
     console.error('[MOCK] Failed to process mock webhook:', error)
 
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
+    // Notify user of failure
+    if (searchData && searchDataLocal && supabase) {
+      await notifySearchFailed(
+        supabase,
+        searchDataLocal!.user_id,
+        searchId,
+        searchDataLocal!.search_query || 'Suche',
+        error instanceof Error ? error.message : 'Unbekannter Fehler'
+      )
+    }
 
-    await supabase.rpc('fail_search', {
+    const { createClient } = await import('@/lib/supabase/server')
+    const errorSupabase = await createClient()
+
+    await errorSupabase.rpc('fail_search', {
       p_search_id: searchId,
       p_error_message: error instanceof Error ? error.message : 'Mock processing failed',
     })

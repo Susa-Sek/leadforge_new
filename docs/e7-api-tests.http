@@ -1,0 +1,251 @@
+# E7 CRM System API Tests
+# Manyleads.io - Epic E7 Backend APIs
+
+### Environment Variables
+# @baseUrl = http://localhost:3000
+# @authCookie = your-auth-cookie-here
+
+# ============================================
+# CONTACTS API
+# ============================================
+
+### GET All Contacts (with pagination)
+GET {{baseUrl}}/api/contacts?page=1&per_page=20
+Content-Type: application/json
+
+### GET Contacts with Search
+GET {{baseUrl}}/api/contacts?search=example&sort_by=name&sort_order=asc
+Content-Type: application/json
+
+### POST Create Contact
+POST {{baseUrl}}/api/contacts
+Content-Type: application/json
+
+{
+  "name": "Max Mustermann",
+  "company": "Musterfirma GmbH",
+  "email": "max@example.com",
+  "phone": "+49 123 456789",
+  "address": "Musterstraße 123, 12345 Musterstadt",
+  "website": "https://example.com",
+  "notes": "Wichtiger Kontakt",
+  "tag_ids": []
+}
+
+### GET Single Contact
+GET {{baseUrl}}/api/contacts/{{contactId}}
+Content-Type: application/json
+
+### PUT Update Contact
+PUT {{baseUrl}}/api/contacts/{{contactId}}
+Content-Type: application/json
+
+{
+  "name": "Max Mustermann",
+  "company": "Musterfirma GmbH Updated",
+  "email": "max.updated@example.com",
+  "notes": "Aktualisierte Notizen",
+  "tag_ids": []
+}
+
+### PATCH Update Contact Notes (Autosave)
+PATCH {{baseUrl}}/api/contacts/{{contactId}}/notes
+Content-Type: application/json
+
+{
+  "notes": "Automatisch gespeicherte Notizen..."
+}
+
+### DELETE Contact
+DELETE {{baseUrl}}/api/contacts/{{contactId}}
+Content-Type: application/json
+
+### POST Import Contacts from Collection (Pro+ only)
+POST {{baseUrl}}/api/contacts/import
+Content-Type: application/json
+
+{
+  "collection_id": "{{collectionId}}",
+  "lead_indices": [0, 1, 2],
+  "tag_ids": ["{{tagId}}"]
+}
+
+### POST Export Contacts (Pro+ only)
+POST {{baseUrl}}/api/contacts/export
+Content-Type: application/json
+
+{
+  "contact_ids": ["{{contactId}}"]
+}
+
+# ============================================
+# CONTACT TAGS API
+# ============================================
+
+### GET All Tags
+GET {{baseUrl}}/api/contact-tags
+Content-Type: application/json
+
+### POST Create Tag
+POST {{baseUrl}}/api/contact-tags
+Content-Type: application/json
+
+{
+  "name": "VIP",
+  "color": "#F59E0B"
+}
+
+### PUT Update Tag
+PUT {{baseUrl}}/api/contact-tags/{{tagId}}
+Content-Type: application/json
+
+{
+  "name": "VIP Updated",
+  "color": "#EF4444"
+}
+
+### DELETE Tag
+DELETE {{baseUrl}}/api/contact-tags/{{tagId}}
+Content-Type: application/json
+
+# ============================================
+# INTERACTIONS API
+# ============================================
+
+### GET Interactions for Contact
+GET {{baseUrl}}/api/contacts/{{contactId}}/interactions?page=1&per_page=10
+Content-Type: application/json
+
+### POST Create Interaction
+POST {{baseUrl}}/api/contacts/{{contactId}}/interactions
+Content-Type: application/json
+
+{
+  "type": "email",
+  "notes": "E-Mail bezüglich Angebot verschickt"
+}
+
+### DELETE Interaction
+DELETE {{baseUrl}}/api/contacts/{{contactId}}/interactions/{{interactionId}}
+Content-Type: application/json
+
+# ============================================
+# DEALS API
+# ============================================
+
+### GET All Deals
+GET {{baseUrl}}/api/deals?page=1&per_page=20
+Content-Type: application/json
+
+### GET Deals with Filters
+GET {{baseUrl}}/api/deals?stage_id={{stageId}}&min_value=1000&is_open=true
+Content-Type: application/json
+
+### POST Create Deal
+POST {{baseUrl}}/api/deals
+Content-Type: application/json
+
+{
+  "title": "Website-Projekt",
+  "description": "Entwicklung einer neuen Website",
+  "contact_id": "{{contactId}}",
+  "stage_id": "{{stageId}}",
+  "value": 15000.00,
+  "probability": 50,
+  "expected_close_date": "2026-03-15"
+}
+
+### GET Single Deal
+GET {{baseUrl}}/api/deals/{{dealId}}
+Content-Type: application/json
+
+### PUT Update Deal
+PUT {{baseUrl}}/api/deals/{{dealId}}
+Content-Type: application/json
+
+{
+  "title": "Website-Projekt Updated",
+  "value": 20000.00,
+  "probability": 75
+}
+
+### PATCH Update Deal Stage (Drag-and-Drop)
+PATCH {{baseUrl}}/api/deals/{{dealId}}/stage
+Content-Type: application/json
+
+{
+  "stage_id": "{{stageId}}",
+  "is_won": false,
+  "close_reason": "Budget"
+}
+
+### DELETE Deal
+DELETE {{baseUrl}}/api/deals/{{dealId}}
+Content-Type: application/json
+
+# ============================================
+# PIPELINE API
+# ============================================
+
+### GET Pipeline Data (for Kanban)
+GET {{baseUrl}}/api/deals/pipeline
+Content-Type: application/json
+
+### GET Deal Statistics
+GET {{baseUrl}}/api/deals/stats
+Content-Type: application/json
+
+### POST Export Deals (Pro+ only)
+POST {{baseUrl}}/api/deals/export
+Content-Type: application/json
+
+{
+  "deal_ids": ["{{dealId}}"]
+}
+
+# ============================================
+# ERROR HANDLING TESTS
+# ============================================
+
+### Test: Duplicate Email (should return 409)
+POST {{baseUrl}}/api/contacts
+Content-Type: application/json
+
+{
+  "name": "Duplicate Test",
+  "company": "Test GmbH",
+  "email": "max@example.com"
+}
+
+### Test: Invalid Email Format (should return 400)
+POST {{baseUrl}}/api/contacts
+Content-Type: application/json
+
+{
+  "name": "Invalid Email",
+  "company": "Test GmbH",
+  "email": "invalid-email"
+}
+
+### Test: Missing Required Fields (should return 400)
+POST {{baseUrl}}/api/contacts
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+
+### Test: Plan Limit - Free User Create Contact (max 50)
+# Should return 403 with PLAN_LIMIT_REACHED
+POST {{baseUrl}}/api/contacts
+Content-Type: application/json
+
+{
+  "name": "Limit Test",
+  "company": "Test GmbH"
+}
+
+### Test: Unauthorized (should return 401)
+GET {{baseUrl}}/api/contacts
+Content-Type: application/json
+Cookie: invalid-cookie

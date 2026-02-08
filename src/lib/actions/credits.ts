@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { notifyCreditPurchaseSuccess, checkAndNotifyCredits } from '@/lib/notifications/integrations'
 
 export type CreditDeductResult = {
   success: boolean
@@ -73,9 +74,16 @@ export async function deductCredits(
     // Revalidate dashboard to reflect new credit count
     revalidatePath('/dashboard')
 
+    // Check if credits are running low and notify user
+    const remainingCredits = data as number
+    if (remainingCredits > 0 && remainingCredits <= 10) {
+      // Fire-and-forget notification check
+      checkAndNotifyCredits(supabase, userId).catch(console.error)
+    }
+
     return {
       success: true,
-      remainingCredits: data as number,
+      remainingCredits,
     }
   } catch (error) {
     console.error('Error deducting credits:', error)
@@ -173,9 +181,18 @@ export async function addCredits(
 
     revalidatePath('/dashboard')
 
+    const remainingCredits = data as number
+
+    // Send notification for credit purchase
+    if (reason === 'purchase' || reason === 'stripe_purchase') {
+      notifyCreditPurchaseSuccess(supabase, userId, amount, remainingCredits).catch(
+        console.error
+      )
+    }
+
     return {
       success: true,
-      remainingCredits: data as number,
+      remainingCredits,
     }
   } catch (error) {
     console.error('Error adding credits:', error)

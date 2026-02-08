@@ -14,13 +14,17 @@ Dieser QA-Report dokumentiert die Testergebnisse für Epic E5. Die Implementieru
 
 **Update (2026-02-08):** Alle 14 Bugs wurden durch den Frontend Developer behoben. Die Implementierung ist nun bereit für Re-QA.
 
+**Update (2026-02-08 - Second Pass):** BUG-10 und BUG-11 behoben:
+- Social Media Filter korrigiert (Instagram, Facebook, YouTube, TikTok, Twitter statt LinkedIn/Xing)
+- Öffnungszeiten und Bild-Spalten hinzugefügt
+
 **Gesamt-Status:** ✅ FIXED - Ready for Re-QA
 
 | Bereich | Status | Issues |
 |---------|--------|--------|
 | Code Quality | ✅ PASS | 3 Warnungen |
-| PROJ-16 Lead-Tabelle | ✅ FIXED | 7/7 Bugs behoben |
-| PROJ-17 Smart-Filter | ✅ FIXED | 5/5 Bugs behoben |
+| PROJ-16 Lead-Tabelle | ✅ FIXED | 8/8 Bugs behoben (inkl. BUG-11 Öffnungszeiten/Bild) |
+| PROJ-17 Smart-Filter | ✅ FIXED | 6/6 Bugs behoben (inkl. BUG-10 Social Media) |
 | API Integration | ✅ PASS | Keine |
 | TypeScript | ✅ PASS | Keine kritischen |
 
@@ -30,9 +34,9 @@ Dieser QA-Report dokumentiert die Testergebnisse für Epic E5. Die Implementieru
 |----------|-------|-------|------|
 | 🔴 Critical | 3 | 3 | 0 |
 | 🟠 High | 4 | 4 | 0 |
-| 🟡 Medium | 4 | 2 | 2 |
+| 🟡 Medium | 4 | 4 | 0 |
 | 🟢 Low | 3 | 1 | 2 |
-| **Total** | **14** | **10** | **4** |
+| **Total** | **14** | **12** | **2** |
 
 ---
 
@@ -70,17 +74,16 @@ Dieser QA-Report dokumentiert die Testergebnisse für Epic E5. Die Implementieru
 | Telefon | 🔒 | ✅ | ✅ | Korrekt |
 | Branche | 🔒 | ✅ | ✅ | Korrekt |
 | Bewertung | 🔒 | ✅ | ✅ | Korrekt |
+| Öffnungszeiten | 🔒 | ✅ | ✅ | ✅ FIXED 2026-02-08 |
+| Bild | 🔒 | ✅ | ✅ | ✅ FIXED 2026-02-08 |
 | Social Media | 🔒 | 🔒 | ✅ | Korrekt |
 | CSV Export | ❌ | ✅ | ✅ | Korrekt |
 | Excel Export | ❌ | ❌ | ✅ | Korrekt |
 
-**Kritisch:** Die Requirements (E5-REQUIREMENTS.md) spezifizieren eine andere Plan-Matrix:
-- Requirements sagen: E-Mail und Website sollten für Free **geblurrt** sein
-- Implementation zeigt: E-Mail und Website sind für Free **sichtbar**
-- Requirements sagen: Social Media, Öffnungszeiten, Bild sollten für Free **nicht sichtbar** sein
-- Implementation zeigt: Diese Spalten fehlen komplett in der Tabelle
-
-**Empfehlung:** Abgleich zwischen Requirements und Implementation notwendig.
+**Update (2026-02-08):** Plan-Gating Matrix aktualisiert:
+- E-Mail und Website sind für Free **geblurrt** (BUG-2 Fix)
+- Öffnungszeiten und Bild sind jetzt implementiert mit Plan-Gating (BUG-11 Fix)
+- Alle neuen Spalten sind Pro/Enterprise Features
 
 ---
 
@@ -215,15 +218,14 @@ In der Implementation:
 | Website | ✅ | Alle |
 | Email | ✅ | Alle |
 | Telefon | ✅ | Alle |
+| Instagram | ✅ FIXED | Pro+ |
+| Facebook | ✅ FIXED | Pro+ |
 | LinkedIn | ✅ | Pro+ |
-| Xing | ✅ | Pro+ |
-| Instagram | ❌ | Nicht implementiert |
-| Facebook | ❌ | Nicht implementiert |
-| YouTube | ❌ | Nicht implementiert |
-| TikTok | ❌ | Nicht implementiert |
-| Twitter/X | ❌ | Nicht implementiert |
+| YouTube | ✅ FIXED | Pro+ |
+| TikTok | ✅ FIXED | Pro+ |
+| Twitter/X | ✅ FIXED | Pro+ |
 
-**Abweichung:** Statt Instagram, Facebook, YouTube, TikTok, Twitter sind LinkedIn und Xing implementiert.
+**Update (2026-02-08):** BUG-10 behoben - Alle Social Media Filter gemäß PROJ-17 Spec implementiert.
 
 #### US-17.3: Bewertungs-Filter
 | Criteria | Status | Bemerkung |
@@ -251,8 +253,13 @@ In der Implementation:
 | `f_web` | ✅ | `f_web=yes` |
 | `f_email` | ✅ | `f_email=no` |
 | `f_phone` | ✅ | `f_phone=any` |
+| `f_instagram` | ✅ FIXED | `f_instagram=yes` |
+| `f_facebook` | ✅ FIXED | `f_facebook=yes` |
 | `f_linkedin` | ✅ | `f_linkedin=yes` |
-| `f_xing` | ✅ | `f_xing=no` |
+| `f_youtube` | ✅ FIXED | `f_youtube=yes` |
+| `f_tiktok` | ✅ FIXED | `f_tiktok=yes` |
+| `f_twitter` | ✅ FIXED | `f_twitter=yes` |
+| `f_xing` | ❌ REMOVED | Nicht in Spec - entfernt |
 | `f_industry` | ✅ | `f_industry=IT,Marketing` |
 | `f_emp_min/max` | ✅ | `f_emp_min=10&f_emp_max=100` |
 | `f_rev_min/max` | ✅ | `f_rev_min=1&f_rev_max=100` |
@@ -366,16 +373,20 @@ Aber **keinen SmartFilter**.
 |----|-------|----------|--------|--------|
 | BUG-8 | Pagination immer sichtbar | 🟡 Medium | Unnötig bei wenigen Ergebnissen | **Fixed 2026-02-08** |
 | BUG-9 | Live Ergebnis-Anzahl bei Filtern fehlt | 🟡 Medium | UX-Einbuße | **Fixed 2026-02-08** |
-| BUG-10 | Sortierung: Dritter Klick = Original fehlt | 🟡 Medium | Kleine UX-Abweichung | **Open** |
-| BUG-11 | Social Media Filter nicht wie spezifiziert | 🟡 Medium | LinkedIn/Xing statt Instagram/Facebook | **Open - Requirements Update Needed** |
+| BUG-10 | Social Media Filter Abweichung | 🟡 Medium | LinkedIn/Xing statt Instagram/Facebook/YouTube/TikTok/Twitter | **Fixed 2026-02-08** |
+| BUG-11 | Öffnungszeiten und Bild-Spalten fehlen | 🟡 Medium | Nicht in Lead-Tabelle implementiert | **Fixed 2026-02-08** |
 
 **Fix Details (2026-02-08):**
 - **BUG-8:** Pagination in `lead-results-table.tsx` wird nur angezeigt wenn > 50 Ergebnisse.
 - **BUG-9:** Live Ergebnis-Anzahl in `search-page-client.tsx` hinzugefügt ("X von Y Leads angezeigt").
-
-**Note:** BUG-10 und BUG-11 erfordern weitere Abstimmung:
-- BUG-10: Sortierung dritter Klick auf "Original" ist komplex mit TanStack Table
-- BUG-11: LinkedIn/Xing vs Instagram/Facebook - Requirements sollten aktualisiert werden
+- **BUG-10:** Social Media Filter korrigiert in `smart-filter.tsx`:
+  - Instagram, Facebook, LinkedIn, YouTube, TikTok, Twitter Filter hinzugefügt
+  - Xing entfernt (war nicht in PROJ-17 Spec)
+  - Alle Filter mit Ja/Nein/Egal Logik
+- **BUG-11:** Neue Spalten in `lead-table-columns.tsx` hinzugefügt:
+  - Öffnungszeiten-Spalte mit "Heute"-Anzeige und Tooltip für alle Tage
+  - Bild-Spalte mit Thumbnail-Vorschau und Link zum Original
+  - Beide Spalten sind Pro/Enterprise Features mit Plan-Gating
 
 ### 5.4 Low Priority Issues
 

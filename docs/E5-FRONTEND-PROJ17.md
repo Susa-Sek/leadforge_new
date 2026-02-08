@@ -225,6 +225,31 @@ const filteredData = useFilteredLeads(leads, filters)
 - [ ] Mobile drawer opens/closes smoothly
 - [ ] Desktop sidebar stays visible
 
+### Edge Cases für Testing
+
+| ID | Scenario | Test-Schritt | Erwartetes Ergebnis |
+|----|----------|--------------|---------------------|
+| **EC-01** | Ungültige URL-Parameter | URL: `?rating_min=abc&rating_max=999` | Invalid Werte ignorieren, URL korrigieren |
+| **EC-02** | Min > Max bei Ranges | Min=4.0, Max=2.0 setzen | Automatische Korrektur auf Min=4.0, Max=5.0 |
+| **EC-03** | Negative Werte | URL: `?rating_min=-5` | Clamping auf 0-5 Bereich |
+| **EC-04** | Schnelle Filter-Wechsel | 10x Filter toggeln in 2 Sekunden | Debounced, nur letzter Zustand in URL |
+| **EC-05** | URL > 2000 Zeichen | 50+ Filter in URL | Kürzung, Hinweis "Zu viele Filter" |
+| **EC-06** | Free-User URL-Manipulation | `?linkedin=ja` als Free-User | Filter ignorieren, "Pro-Filter nicht verfügbar" |
+| **EC-07** | Plan-Downgrade | Pro-Filter aktiv, Subscription endet | Pro-Filter resetten, Standard behalten |
+| **EC-08** | Korrupte localStorage | localStorage manuell manipulieren | Validieren, bei Fehler Reset auf Defaults |
+| **EC-09** | 10.000+ Leads filtern | Große Datenmenge testen | Virtualisierung, kein UI-Blocking |
+| **EC-10** | Alle Filter widersprüchlich | Kombination ergibt 0 Ergebnisse | "Keine Ergebnisse", Vorschlag lockern |
+| **EC-11** | Multi-Tab Szenario | Gleiche Suche in 2 Tabs, verschiedene Filter | Jeder Tab hat eigenen State |
+| **EC-12** | Browser Back/Forward | Filter ändern, dann Back/Forward | Filter-State korrekt wiederherstellen |
+| **EC-13** | Filter während Loading | Filter setzen bevor Daten fertig | Filter nach Laden anwenden |
+| **EC-14** | Mobile Filter-Panel | Viewport < 320px | Full-Screen Modal, scrollbar |
+| **EC-15** | Touch-Gesten | Slider horizontal, Page vertical scroll | Keine Konflikte, korrektes Handling |
+| **EC-16** | Tastatur-Navigation | Tab durch alle Filter-Elemente | Alle erreichbar, Fokus-Indikatoren |
+| **EC-17** | Screen Reader | Toggle-Änderungen | ARIA-Live Ankündigungen |
+| **EC-18** | Veraltete Daten | Cache veraltet während Filter | "Neue Daten verfügbar"-Button |
+| **EC-19** | SQL Injection | `?industry='; DROP TABLE--` | Sanitisiert, keine Ausführung |
+| **EC-20** | XSS Versuch | `?website=<script>alert(1)</script>` | Escaped, kein Script-Ausführung |
+
 ### Files Created/Modified
 
 **New Files:**

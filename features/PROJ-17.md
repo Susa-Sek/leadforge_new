@@ -62,6 +62,21 @@ Mehrere Filter werden mit AND verknüpft:
 - "Hat Website=Ja" AND "Hat Email=Ja" = nur Firmen mit Website UND Email
 - "Hat Telefon=Nein" AND "Hat LinkedIn=Ja" = Firmen ohne Telefon aber mit LinkedIn
 
+## Edge Cases
+
+| ID | Scenario | Beschreibung | Erwartetes Verhalten | Fehlermeldung |
+|----|----------|--------------|---------------------|---------------|
+| **EC-01** | Ungültige URL-Parameter | Manipulierte URL mit `rating_min=abc` | Invalid Parameter ignorieren, Standard-Werte verwenden | - |
+| **EC-02** | Min > Max bei Ranges | Min-Bewertung 4.0, Max 2.0 | Automatische Korrektur: Max = Min + 1.0 | "Werte wurden angepasst" |
+| **EC-03** | Schnelle Filter-Wechsel | User toggelt Filter >5x/Sekunde | Debounce 300ms, Cancel vorheriger Berechnungen | - |
+| **EC-04** | URL > 2000 Zeichen | Zu viele aktive Filter | Kürzung auf wichtigste Filter, Hinweis | "Zu viele Filter aktiv" |
+| **EC-05** | Free-User manipuliert URL | User fügt `linkedin=ja` zur URL | Filter ignorieren, Hinweis anzeigen | "Pro-Filter nicht verfügbar" |
+| **EC-06** | Plan-Downgrade während Nutzung | Subscription läuft ab | Pro-Filter resetten, Standard behalten | "Abonnement abgelaufen" |
+| **EC-07** | Alle Filter widersprüchlich | Kombination ergibt 0 Ergebnisse | "Keine Ergebnisse", Vorschlag Filter lockern | "Versuchen Sie andere Filter" |
+| **EC-08** | Korrupte localStorage-Daten | Manuell manipulierter Storage | Daten validieren, bei Fehler: Reset | - |
+| **EC-09** | 10.000+ Leads filtern | Sehr große Ergebnismenge | Virtualisierung, Progress-Indicator | "Daten werden verarbeitet..." |
+| **EC-10** | Filter auf veralteten Daten | Cache ist veraltet | "Neue Daten verfügbar"-Button | "Daten aktualisieren?" |
+
 ## Technical Requirements
 
 ### Dependencies

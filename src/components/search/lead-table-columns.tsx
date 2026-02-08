@@ -15,7 +15,7 @@
 
 import { SearchResultLead } from '@/lib/search/types'
 import { ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown, Mail, Phone, Globe, Linkedin, Building2, MapPin, Star, Users } from 'lucide-react'
+import { ArrowUpDown, Mail, Phone, Globe, Linkedin, Building2, MapPin, Star, Users, Clock, Image } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -33,6 +33,9 @@ export interface ColumnVisibilityConfig {
   socialLinks: boolean
   phone: boolean
   export: boolean
+  // BUG-11 FIX: Opening hours and image columns
+  openingHours: boolean
+  image: boolean
 }
 
 /**
@@ -51,6 +54,9 @@ export function getColumnVisibility(planTier: PlanTier): ColumnVisibilityConfig 
         socialLinks: true,
         phone: true,
         export: true,
+        // BUG-11 FIX: Enterprise gets opening hours and image
+        openingHours: true,
+        image: true,
       }
     case 'pro':
       return {
@@ -61,6 +67,9 @@ export function getColumnVisibility(planTier: PlanTier): ColumnVisibilityConfig 
         socialLinks: false,
         phone: true,
         export: true,
+        // BUG-11 FIX: Pro gets opening hours and image
+        openingHours: true,
+        image: true,
       }
     case 'free':
     default:
@@ -72,6 +81,9 @@ export function getColumnVisibility(planTier: PlanTier): ColumnVisibilityConfig 
         socialLinks: false,
         phone: false,
         export: false,
+        // BUG-11 FIX: Free users don't get opening hours and image
+        openingHours: false,
+        image: false,
       }
   }
 }
@@ -299,6 +311,79 @@ export function createColumns(planTier: PlanTier): ColumnDef<SearchResultLead>[]
       },
     },
 
+    // BUG-11 FIX: Opening Hours (Pro+)
+    {
+      id: 'openingHours',
+      header: ({ column }) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          <Clock className="mr-2 h-4 w-4" />
+          Öffnungszeiten
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        if (!visibility.openingHours) {
+          return (
+            <PlanGate requiredPlan="pro" featureName="Öffnungszeiten">
+              <span className="text-muted-foreground">-</span>
+            </PlanGate>
+          )
+        }
+        const hours = row.original.openingHours
+        if (!hours || Object.keys(hours).length === 0) {
+          return <span className="text-muted-foreground">-</span>
+        }
+        // Show today's hours or a summary
+        const today = new Date().toLocaleDateString('de-DE', { weekday: 'long' })
+        const todayKey = Object.keys(hours).find(k => k.toLowerCase().includes(today.toLowerCase()))
+        if (todayKey) {
+          return (
+            <div className="text-sm" title={Object.entries(hours).map(([k, v]) => `${k}: ${v}`).join('\n')}>
+              <span className="font-medium">Heute:</span> {hours[todayKey]}
+            </div>
+          )
+        }
+        // Show first available day
+        const firstDay = Object.entries(hours)[0]
+        return (
+          <div className="text-sm" title={Object.entries(hours).map(([k, v]) => `${k}: ${v}`).join('\n')}>
+            <span className="font-medium">{firstDay[0]}:</span> {firstDay[1]}
+          </div>
+        )
+      },
+    },
+
+    // BUG-11 FIX: Image (Pro+)
+    {
+      id: 'image',
+      header: 'Bild',
+      cell: ({ row }) => {
+        if (!visibility.image) {
+          return (
+            <PlanGate requiredPlan="pro" featureName="Firmenbilder">
+              <span className="text-muted-foreground">-</span>
+            </PlanGate>
+          )
+        }
+        const imageUrl = row.original.imageUrl
+        if (!imageUrl) {
+          return <span className="text-muted-foreground">-</span>
+        }
+        return (
+          <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block">
+            <img
+              src={imageUrl}
+              alt={row.original.companyName}
+              className="h-12 w-12 object-cover rounded-md hover:scale-110 transition-transform"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none'
+              }}
+            />
+          </a>
+        )
+      },
+    },
+
     // Social Links (Enterprise only)
     {
       id: 'socialLinks',
@@ -366,6 +451,9 @@ export function getColumnOptions(): { id: string; label: string }[] {
     { id: 'website', label: 'Website' },
     { id: 'category', label: 'Branche' },
     { id: 'rating', label: 'Bewertung' },
+    // BUG-11 FIX: Add opening hours and image to column options
+    { id: 'openingHours', label: 'Öffnungszeiten' },
+    { id: 'image', label: 'Bild' },
     { id: 'socialLinks', label: 'Social Media' },
     { id: 'googleMaps', label: 'Karte' },
   ]

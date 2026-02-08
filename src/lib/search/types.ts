@@ -149,6 +149,7 @@ export interface SearchResultLead {
     twitter?: string
     youtube?: string
     xing?: string
+    tiktok?: string
   }
   openingHours?: Record<string, string>
   imageUrl?: string

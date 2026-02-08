@@ -285,6 +285,9 @@ export function LeadResultsTable({
                       {column.id === 'website' && 'Website'}
                       {column.id === 'category' && 'Branche'}
                       {column.id === 'rating' && 'Bewertung'}
+                      {/* BUG-11 FIX: Add opening hours and image column labels */}
+                      {column.id === 'openingHours' && 'Öffnungszeiten'}
+                      {column.id === 'image' && 'Bild'}
                       {column.id === 'socialLinks' && 'Social Media'}
                       {column.id === 'googleMaps' && 'Karte'}
                     </DropdownMenuCheckboxItem>

@@ -88,9 +88,13 @@ export function SearchPageClient({
       if (filters.hasLinkedIn === 'yes' && !lead.socialLinks?.linkedin) return false
       if (filters.hasLinkedIn === 'no' && lead.socialLinks?.linkedin) return false
 
-      // Xing filter (Pro+)
-      if (filters.hasXing === 'yes' && !lead.socialLinks?.xing) return false
-      if (filters.hasXing === 'no' && lead.socialLinks?.xing) return false
+      // TikTok filter (Pro+)
+      if (filters.hasTikTok === 'yes' && !lead.socialLinks?.tiktok) return false
+      if (filters.hasTikTok === 'no' && lead.socialLinks?.tiktok) return false
+
+      // Twitter filter (Pro+)
+      if (filters.hasTwitter === 'yes' && !lead.socialLinks?.twitter) return false
+      if (filters.hasTwitter === 'no' && lead.socialLinks?.twitter) return false
 
       // Industry filter
       if (filters.industries.length > 0 && !filters.industries.includes(lead.category || '')) {

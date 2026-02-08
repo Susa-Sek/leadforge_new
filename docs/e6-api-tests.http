@@ -1,0 +1,130 @@
+# E6 Backend API Tests
+# Sammlungen & Suchverlauf API Routes
+#
+# Usage: Install REST Client VS Code extension or run with HTTPie/curl
+# Note: Replace {{baseUrl}} and use actual auth cookies/session
+
+###
+
+# @name Login (get auth cookie)
+# First, login via UI or use existing session
+POST {{baseUrl}}/api/auth/callback
+Content-Type: application/json
+
+### ============================================
+### COLLECTIONS API
+### ============================================
+
+### GET /api/collections - List all collections (default pagination)
+GET {{baseUrl}}/api/collections
+
+### GET /api/collections - With pagination
+GET {{baseUrl}}/api/collections?page=1&limit=10
+
+### GET /api/collections - Sort by name ascending
+GET {{baseUrl}}/api/collections?sort_by=name&sort_order=asc
+
+### GET /api/collections - Sort by count descending
+GET {{baseUrl}}/api/collections?sort_by=count&sort_order=desc
+
+### GET /api/collections - Search filter
+GET {{baseUrl}}/api/collections?search=Berlin
+
+### GET /api/collections - Combined filters
+GET {{baseUrl}}/api/collections?page=1&limit=5&sort_by=date&sort_order=desc&search=Software
+
+### GET /api/collections/[id] - Get collection details
+# Replace {{collectionId}} with actual UUID from list response
+GET {{baseUrl}}/api/collections/{{collectionId}}
+
+### GET /api/collections/[id] - With pagination for leads
+GET {{baseUrl}}/api/collections/{{collectionId}}?page=1&limit=25
+
+### DELETE /api/collections/[id] - Delete collection
+# WARNING: This permanently deletes the collection and all leads!
+DELETE {{baseUrl}}/api/collections/{{collectionId}}
+
+### ============================================
+### SEARCH HISTORY API
+### ============================================
+
+### GET /api/search/history - List all searches (default)
+GET {{baseUrl}}/api/search/history
+
+### GET /api/search/history - With pagination
+GET {{baseUrl}}/api/search/history?page=1&limit=10
+
+### GET /api/search/history - Filter by status
+GET {{baseUrl}}/api/search/history?status=completed
+
+### GET /api/search/history - Filter failed searches
+GET {{baseUrl}}/api/search/history?status=failed
+
+### GET /api/search/history - Filter running searches
+GET {{baseUrl}}/api/search/history?status=running
+
+### GET /api/search/history - Date range filter
+GET {{baseUrl}}/api/search/history?date_from=2026-01-01T00:00:00Z&date_to=2026-12-31T23:59:59Z
+
+### GET /api/search/history - Combined filters
+GET {{baseUrl}}/api/search/history?status=completed&date_from=2026-01-01T00:00:00Z&page=1&limit=5
+
+### ============================================
+### SEARCH RETRY API
+### ============================================
+
+### GET /api/search/retry - Check rate limit status
+GET {{baseUrl}}/api/search/retry
+
+### POST /api/search/retry - Retry a search
+# Replace {{searchId}} with actual UUID from history
+POST {{baseUrl}}/api/search/retry
+Content-Type: application/json
+
+{
+  "search_id": "{{searchId}}"
+}
+
+### ============================================
+### ERROR CASE TESTS
+### ============================================
+
+### GET /api/collections/[id] - 404 Not Found
+GET {{baseUrl}}/api/collections/00000000-0000-0000-0000-000000000000
+
+### GET /api/collections/[id] - 400 Invalid UUID
+GET {{baseUrl}}/api/collections/invalid-uuid
+
+### DELETE /api/collections/[id] - 404 Not Found
+DELETE {{baseUrl}}/api/collections/00000000-0000-0000-0000-000000000000
+
+### POST /api/search/retry - 400 Invalid JSON
+POST {{baseUrl}}/api/search/retry
+Content-Type: application/json
+
+{
+  "invalid": "data"
+}
+
+### POST /api/search/retry - 404 Search not found
+POST {{baseUrl}}/api/search/retry
+Content-Type: application/json
+
+{
+  "search_id": "00000000-0000-0000-0000-000000000000"
+}
+
+### POST /api/search/retry - 400 Invalid UUID
+POST {{baseUrl}}/api/search/retry
+Content-Type: application/json
+
+{
+  "search_id": "not-a-uuid"
+}
+
+### GET /api/search/history - 400 Invalid status
+GET {{baseUrl}}/api/search/history?status=invalid_status
+
+### GET /api/collections - 400 Invalid pagination
+GET {{baseUrl}}/api/collections?page=-1&limit=999
+

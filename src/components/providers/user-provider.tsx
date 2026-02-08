@@ -35,6 +35,7 @@ interface UserContextType {
   credits: Credits
   planConfig: PlanConfig | null
   loading: boolean
+  isLoading: boolean // Alias for loading
   refreshUser: () => Promise<void>
   logout: () => Promise<void>
 }
@@ -219,6 +220,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     credits,
     planConfig,
     loading,
+    isLoading: loading, // Alias
     refreshUser,
     logout,
   }

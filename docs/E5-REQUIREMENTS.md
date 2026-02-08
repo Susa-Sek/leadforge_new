@@ -146,6 +146,29 @@ Tabellarische Anzeige der Suchergebnisse mit plan-basiertem Feature-Gating. Die 
 | **500+ Ergebnisse** | Pagination bleibt, Performance durch Virtualisierung (react-window) |
 | **User ohne Plan** | Fallback auf Free (sollte nicht passieren, aber defensiv programmieren) |
 
+#### Zusätzliche Edge Cases für PROJ-16
+
+| ID | Kategorie | Scenario | Erwartetes Verhalten |
+|----|-----------|----------|---------------------|
+| **EC-16-01** | Daten | Leerer/null Firmenname | "[Unbekannte Firma]" als Placeholder |
+| **EC-16-02** | Daten | Extrem lange Adressen (>200 Zeichen) | Truncation mit Tooltip |
+| **EC-16-03** | Daten | Negative Bewertungen (>5 oder <0) | Clamping auf 0-5 Bereich |
+| **EC-16-04** | Daten | Duplikate in Ergebnissen | Beide anzeigen, keine Deduplizierung |
+| **EC-16-05** | Daten | Spezialzeichen/SQL-Injection in Namen | HTML-Escaping, Sanitization |
+| **EC-16-06** | State | Session-Timeout während Betrachtung | Redirect zu Login mit Return-URL |
+| **EC-16-07** | State | Sortierung während Loading | Debounced clicks |
+| **EC-16-08** | Browser | LocalStorage voll | Graceful Degradation, keine Persistenz |
+| **EC-16-09** | Browser | LocalStorage/Cookies blockiert | Standard-Verhalten, Hinweis bei Bedarf |
+| **EC-16-10** | Network | API Timeout (>30s) | Timeout-Error, Retry-Button |
+| **EC-16-11** | Network | 500/403/404 von API | Error-State mit spezifischer Message |
+| **EC-16-12** | Network | Rate Limiting (429) | Exponentieller Backoff |
+| **EC-16-13** | Plan | Upgrade während Session | Berechtigungen neu laden |
+| **EC-16-14** | Plan | Export-Limit erreicht (Free) | Block mit Hinweis |
+| **EC-16-15** | Export | 0 Zeilen ausgewählt | Alle sichtbaren exportieren oder Hinweis |
+| **EC-16-16** | Export | CSV mit Semikolon/Zeilenumbrüchen | Proper CSV-Escaping |
+| **EC-16-17** | Bulk | 500+ Zeilen ausgewählt | "Alle X ausgewählt" über Seiten |
+| **EC-16-18** | Bulk | Race Condition bei Sammlung hinzufügen | Error wenn Sammlung gelöscht |
+
 ---
 
 ### Export-Funktionen (Teil von PROJ-16)
@@ -348,6 +371,36 @@ Alle Filter werden UND-verknüpft:
 | Nein | Egal | Egal | Nur ohne Instagram |
 | Ja | Ja | Egal | Mit Instagram UND Facebook |
 | Ja | Nein | Egal | Mit Instagram aber OHNE Facebook |
+
+#### Edge Cases für PROJ-17
+
+| ID | Kategorie | Scenario | Erwartetes Verhalten |
+|----|-----------|----------|---------------------|
+| **EC-17-01** | Input | Ungültige URL-Parameter (`rating_min=abc`) | Invalid Parameter ignorieren, Defaults verwenden |
+| **EC-17-02** | Input | Min > Max bei Ranges | Automatische Korrektur: Max = Min + 1.0 |
+| **EC-17-03** | Input | Negative Werte bei Bewertungen | Clamping auf validen Bereich (0-5) |
+| **EC-17-04** | Input | Schnelle Filter-Wechsel (>5x/Sek) | Debounce 300ms, Cancel vorheriger Calls |
+| **EC-17-05** | Input | Leerer Multi-Select (0 Branchen) | Als "Egal" behandeln |
+| **EC-17-06** | Input | Zu viele Multi-Select-Optionen (>20) | Limit auf 20, Hinweis anzeigen |
+| **EC-17-07** | Input | SQL-Injection/XSS in Filter-Parametern | Sanitizen, Prepared Statements |
+| **EC-17-08** | State | URL > 2000 Zeichen | Kürzung auf wichtigste Filter |
+| **EC-17-09** | State | Korrupte localStorage-Daten | Validieren, bei Fehler Reset |
+| **EC-17-10** | State | Filter-State von anderem User | Übernehmen, aber nur erlaubte Filter |
+| **EC-17-11** | State | Veraltete Filter-Namen (Refactoring) | Unknown Filter ignorieren |
+| **EC-17-12** | State | Browser-History überladen | Replace State statt Push |
+| **EC-17-13** | State | Multi-Tab-Szenario | Jede Suche eigenen State (searchId-basiert) |
+| **EC-17-14** | Performance | 10.000+ Leads filtern | Virtualisierung, Web Worker |
+| **EC-17-15** | Performance | Filter-Berechnung > 1s | Loading-Indicator, Cancel-Option |
+| **EC-17-16** | Performance | Race Condition Filter vs Daten | Filter nach Laden anwenden |
+| **EC-17-17** | Plan | Free-User manipuliert URL zu Pro | Filter ignorieren, Hinweis |
+| **EC-17-18** | Plan | Plan-Downgrade während Nutzung | Pro-Filter resetten |
+| **EC-17-19** | Plan | Trial endet während Nutzung | Pro-Filter deaktivieren |
+| **EC-17-20** | Result | Alle Filter widersprüchlich | "Keine Ergebnisse", Vorschlag lockern |
+| **EC-17-21** | Result | Filter ergibt genau 1 Ergebnis | "1 Lead gefunden", keine Pagination |
+| **EC-17-22** | Result | Filter auf Seite 5, zu streng | Zurück zu Seite 1 springen |
+| **EC-17-23** | UI | Filter-Panel bei <320px | Full-Screen Modal mit Scroll |
+| **EC-17-24** | UI | Touch-Gesten auf Mobile | Korrektes Event-Handling |
+| **EC-17-25** | Sync | Daten ändern sich während Filter | "Neue Daten verfügbar"-Button |
 
 ---
 
