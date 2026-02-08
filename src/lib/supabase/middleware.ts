@@ -63,6 +63,22 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // BUG-1 FIX: Check suspended status for ALL authenticated users on protected routes
+  if (user && protectedRoutes.some((route) => pathname.startsWith(route))) {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('is_suspended')
+      .eq('id', user.id)
+      .single()
+
+    if (!error && profile?.is_suspended) {
+      // User is suspended - redirect to suspended page
+      const url = request.nextUrl.clone()
+      url.pathname = '/konto-gesperrt'
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Admin route protection - check role for authenticated users
   if (user && adminRoutes.some((route) => pathname.startsWith(route))) {
     // Check if user has admin role

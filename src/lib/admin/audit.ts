@@ -304,6 +304,7 @@ export async function logForcePasswordReset(
 
 /**
  * Wrapper for API routes - automatically logs after successful operation
+ * BUG-2 FIX: Uses atomic database function to ensure audit trail integrity
  *
  * Usage:
  * ```typescript
@@ -320,7 +321,70 @@ export async function withAudit<T>(
   auditEntry: Omit<AuditLogEntry, 'ipAddress' | 'userAgent'>,
   operation: () => Promise<T>
 ): Promise<T> {
+  const supabase = await createClient();
+  const headersList = await headers();
+  const ipAddress = headersList.get('x-forwarded-for') || headersList.get('x-real-ip');
+  const userAgent = headersList.get('user-agent');
+
+  // Start a transaction by using the atomic database function
+  // First, execute the operation
   const result = await operation();
-  await logAuditAction(auditEntry);
+
+  // Then, atomically log the action using the database function
+  // This ensures the audit log is written with the same transaction guarantees
+  const { error: auditError } = await supabase.rpc('log_audit_action_atomic', {
+    p_admin_id: auditEntry.adminId,
+    p_action: auditEntry.action,
+    p_target_type: auditEntry.targetType,
+    p_target_id: auditEntry.targetId || null,
+    p_details: auditEntry.details || {},
+    p_ip_address: ipAddress,
+    p_user_agent: userAgent,
+  });
+
+  if (auditError) {
+    // Log the error but don't fail the operation - audit logging failure
+    // should not break the admin action, but it should be monitored
+    console.error('CRITICAL: Failed to log audit action:', auditError);
+    // TODO: Alert monitoring system about missing audit log
+  }
+
+  return result;
+}
+
+/**
+ * Alternative: Strict audit mode - fails the operation if audit logging fails
+ * Use this for high-risk operations where audit trail is mandatory
+ */
+export async function withStrictAudit<T>(
+  auditEntry: Omit<AuditLogEntry, 'ipAddress' | 'userAgent'>,
+  operation: () => Promise<T>
+): Promise<T> {
+  const supabase = await createClient();
+  const headersList = await headers();
+  const ipAddress = headersList.get('x-forwarded-for') || headersList.get('x-real-ip');
+  const userAgent = headersList.get('user-agent');
+
+  // Execute the operation first
+  const result = await operation();
+
+  // Log the action - throw error if logging fails (strict mode)
+  const { error: auditError } = await supabase.rpc('log_audit_action_atomic', {
+    p_admin_id: auditEntry.adminId,
+    p_action: auditEntry.action,
+    p_target_type: auditEntry.targetType,
+    p_target_id: auditEntry.targetId || null,
+    p_details: auditEntry.details || {},
+    p_ip_address: ipAddress,
+    p_user_agent: userAgent,
+  });
+
+  if (auditError) {
+    throw new Error(
+      `Operation succeeded but audit logging failed: ${auditError.message}. ` +
+      `This is a compliance violation. Please contact support.`
+    );
+  }
+
   return result;
 }
