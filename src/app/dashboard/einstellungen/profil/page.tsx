@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,10 +26,10 @@ import { Separator } from '@/components/ui/separator';
 
 import { useProfile, useUpdateProfile, useUploadAvatar } from '@/hooks/use-settings';
 
-// Validation schema
+// Validation schema - matches backend API
 const profileSchema = z.object({
-  first_name: z.string().min(2, 'Vorname muss mindestens 2 Zeichen lang sein').max(100),
-  last_name: z.string().min(2, 'Nachname muss mindestens 2 Zeichen lang sein').max(100),
+  first_name: z.string().min(2, 'Vorname muss mindestens 2 Zeichen lang sein').max(100).or(z.literal('')).optional(),
+  last_name: z.string().min(2, 'Nachname muss mindestens 2 Zeichen lang sein').max(100).or(z.literal('')).optional(),
   company_name: z.string().max(200).optional(),
   job_title: z.string().max(100).optional(),
 });
@@ -53,14 +53,16 @@ export default function ProfileSettingsPage() {
   });
 
   // Update form values when profile loads
-  if (profile && form.getValues().first_name === '' && profile.first_name) {
-    form.reset({
-      first_name: profile.first_name || '',
-      last_name: profile.last_name || '',
-      company_name: profile.company_name || '',
-      job_title: profile.job_title || '',
-    });
-  }
+  useEffect(() => {
+    if (profile) {
+      form.reset({
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        company_name: profile.company_name || '',
+        job_title: profile.job_title || '',
+      });
+    }
+  }, [profile, form]);
 
   const onSubmit = async (data: ProfileFormData) => {
     try {
@@ -189,9 +191,9 @@ export default function ProfileSettingsPage() {
                   name="first_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Vorname *</FormLabel>
+                      <FormLabel>Vorname</FormLabel>
                       <FormControl>
-                        <Input placeholder="Max" {...field} />
+                        <Input placeholder="Max" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -202,9 +204,9 @@ export default function ProfileSettingsPage() {
                   name="last_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nachname *</FormLabel>
+                      <FormLabel>Nachname</FormLabel>
                       <FormControl>
-                        <Input placeholder="Mustermann" {...field} />
+                        <Input placeholder="Mustermann" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -1,7 +1,6 @@
 'use client'
 
 import { Coins } from 'lucide-react'
-import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 
 interface CreditProgressProps {
@@ -15,7 +14,7 @@ interface CreditProgressProps {
  * CreditProgress - Zeigt verbleibende Credits mit Fortschrittsbalken
  *
  * Farbcodierung:
- * - Grun: > 50% verbleibend
+ * - Grün: > 50% verbleibend
  * - Gelb: 10-50% verbleibend
  * - Rot: < 10% verbleibend
  */
@@ -30,7 +29,7 @@ export function CreditProgress({
 
   // Farbcodierung basierend auf verbleibendem Prozentsatz
   const getColorVariant = () => {
-    if (percentage > 50) return 'success'    // Grun
+    if (percentage > 50) return 'success'    // Grün
     if (percentage >= 10) return 'warning'   // Gelb
     return 'danger'                          // Rot
   }
@@ -65,16 +64,11 @@ export function CreditProgress({
         </div>
       </div>
 
-      {/* Fortschrittsbalken */}
-      <div className="relative">
-        <Progress
-          value={percentage}
-          className="h-2"
-        />
-        {/* Overlay fur farbigen Progress */}
+      {/* Custom Progress Bar */}
+      <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
         <div
           className={cn(
-            'absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out',
+            'h-full transition-all duration-500 ease-out',
             progressColors[colorVariant]
           )}
           style={{ width: `${percentage}%` }}
