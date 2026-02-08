@@ -23,8 +23,26 @@ export const contactSchema = z.object({
     .optional()
     .or(z.literal('')),
   website: z.string()
-    .url('Ungültige Website-URL')
     .max(200, 'Website darf maximal 200 Zeichen haben')
+    .transform((val) => {
+      if (!val || val === '') return '';
+      if (val && !val.startsWith('http://') && !val.startsWith('https://') && val.includes('.')) {
+        return `https://${val}`;
+      }
+      return val;
+    })
+    .refine(
+      (val) => {
+        if (!val || val === '') return true;
+        try {
+          new URL(val);
+          return true;
+        } catch {
+          return val.includes('.');
+        }
+      },
+      { message: 'Ungültige Website-URL (z.B. example.com oder https://example.com)' }
+    )
     .optional()
     .or(z.literal('')),
   tag_ids: z.array(z.string()).optional(),

@@ -143,7 +143,7 @@ export function SearchForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {INDUSTRY_OPTIONS.map((option) => (
+                      {INDUSTRY_OPTIONS.filter((option) => option.value).map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
