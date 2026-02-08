@@ -60,7 +60,7 @@ export const notificationTypeSchema = z.enum([
 /**
  * Base notification data schema
  */
-export const notificationDataSchema = z.record(z.unknown()).default({});
+export const notificationDataSchema = z.record(z.string(), z.unknown()).default({});
 
 /**
  * Create notification request schema

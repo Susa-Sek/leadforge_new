@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PricingTable } from "@/components/billing/pricing-table";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,14 @@ import { ArrowLeft, AlertTriangle, CheckCircle, Crown, Sparkles } from "lucide-r
 import Link from "next/link";
 
 export default function UpgradePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>}>
+      <UpgradePageContent />
+    </Suspense>
+  );
+}
+
+function UpgradePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading: userLoading } = useUser();

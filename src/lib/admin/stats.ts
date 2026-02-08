@@ -207,18 +207,27 @@ export async function getTopUsers(
       break;
 
     case 'searches':
-      // Get users with most searches
-      const { data: searchData } = await supabase
+      // Get users with most searches - fetch all and group in JS (Supabase JS doesn't support GROUP BY)
+      const { data: searchQueries } = await supabase
         .from('search_queries')
-        .select('user_id, count')
-        .group('user_id')
-        .order('count', { ascending: false })
-        .limit(limit);
+        .select('user_id');
 
-      if (!searchData) return [];
+      if (!searchQueries || searchQueries.length === 0) return [];
+
+      // Group by user_id in JavaScript
+      const searchCounts = searchQueries.reduce((acc, sq) => {
+        acc[sq.user_id] = (acc[sq.user_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Convert to array and sort by count
+      const sortedUsers = Object.entries(searchCounts)
+        .map(([user_id, count]) => ({ user_id, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, limit);
 
       // Get user details
-      const userIds = searchData.map((s) => s.user_id);
+      const userIds = sortedUsers.map((s) => s.user_id);
       const { data: users } = await supabase
         .from('profiles')
         .select('id, email, full_name')
@@ -226,7 +235,7 @@ export async function getTopUsers(
 
       return users?.map((u) => ({
         ...u,
-        metric_value: searchData.find((s) => s.user_id === u.id)?.count || 0,
+        metric_value: sortedUsers.find((s) => s.user_id === u.id)?.count || 0,
       })) || [];
 
     case 'logins':
@@ -346,9 +355,8 @@ export const getCachedRevenueStats = unstable_cache(
  */
 export async function invalidateAdminStats(): Promise<void> {
   // Next.js will automatically revalidate on next request
-  // For immediate revalidation, we'd need to use revalidateTag
-  // which requires importing from next/cache
+  // For immediate revalidation, use revalidateTag with profile
   const { revalidateTag } = await import('next/cache');
-  revalidateTag('admin-stats');
-  revalidateTag('admin-revenue');
+  revalidateTag('admin-stats', 'max');
+  revalidateTag('admin-revenue', 'max');
 }

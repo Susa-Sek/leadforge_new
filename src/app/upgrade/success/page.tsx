@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,26 @@ interface CheckoutSession {
 }
 
 export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Skeleton className="w-20 h-20 rounded-full mx-auto mb-6" />
+              <Skeleton className="h-8 w-64 mx-auto mb-4" />
+              <Skeleton className="h-4 w-48 mx-auto" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    }>
+      <CheckoutSuccessContent />
+    </Suspense>
+  );
+}
+
+function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");

@@ -105,7 +105,7 @@ export const CreateTemplateRequestSchema = z.object({
   exportType: ExportTypeSchema,
   format: ExportFormatSchema,
   columns: z.array(z.string()).min(1, 'Mindestens eine Spalte muss ausgewaehlt werden'),
-  defaultFilters: z.record(z.any()).optional(),
+  defaultFilters: z.record(z.string(), z.any()).optional(),
   formatOptions: FormatOptionsSchema.optional(),
   isPublic: z.boolean().optional().default(false),
 });
@@ -115,7 +115,7 @@ export const UpdateTemplateRequestSchema = z.object({
   description: z.string().max(500).optional(),
   format: ExportFormatSchema.optional(),
   columns: z.array(z.string()).min(1).optional(),
-  defaultFilters: z.record(z.any()).optional(),
+  defaultFilters: z.record(z.string(), z.any()).optional(),
   formatOptions: FormatOptionsSchema.optional(),
   isPublic: z.boolean().optional(),
 });
@@ -204,8 +204,8 @@ export const TemplateResponseSchema = z.object({
   exportType: ExportTypeSchema,
   format: ExportFormatSchema,
   columns: z.array(z.string()),
-  defaultFilters: z.record(z.any()).optional(),
-  formatOptions: z.record(z.any()).optional(),
+  defaultFilters: z.record(z.string(), z.any()).optional(),
+  formatOptions: z.record(z.string(), z.any()).optional(),
   isPublic: z.boolean(),
   usageCount: z.number(),
   lastUsedAt: z.string().datetime().optional(),
