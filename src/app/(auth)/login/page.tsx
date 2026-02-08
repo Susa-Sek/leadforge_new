@@ -41,7 +41,7 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error, data } = await supabase.auth.signInWithPassword({
       email: values.email,
       password: values.password,
     })
@@ -54,6 +54,23 @@ export default function LoginPage() {
       )
       setIsLoading(false)
     } else {
+      // BUG-6 FIX: Check if user is suspended after login
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_suspended')
+          .eq('id', data.user.id)
+          .single()
+
+        if (profile?.is_suspended) {
+          // Sign out the suspended user
+          await supabase.auth.signOut()
+          setError('Dein Konto wurde gesperrt. Bitte kontaktiere den Support.')
+          setIsLoading(false)
+          return
+        }
+      }
+
       router.refresh()
       router.push('/dashboard')
     }
