@@ -29,6 +29,8 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [planFilter, setPlanFilter] = useState<'all' | 'free' | 'pro' | 'enterprise'>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended' | 'pending'>('all')
+  const [roleFilter, setRoleFilter] = useState<'all' | 'user' | 'admin'>('all')
+  const [pageSize, setPageSize] = useState<25 | 50 | 100>(25)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
@@ -37,8 +39,9 @@ export default function AdminUsersPage() {
     search: searchQuery,
     plan: planFilter,
     status: statusFilter,
+    role: roleFilter,
     page: currentPage,
-    limit: 20,
+    limit: pageSize,
   })
 
   const { user: selectedUser, isLoading: isLoadingUser } = useAdminUser(selectedUserId)
@@ -150,6 +153,22 @@ export default function AdminUsersPage() {
                 <SelectItem value="pending">Ausstehend</SelectItem>
               </SelectContent>
             </Select>
+            <Select
+              value={roleFilter}
+              onValueChange={(value) => {
+                setRoleFilter(value as typeof roleFilter)
+                setCurrentPage(1)
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Rolle filtern" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Rollen</SelectItem>
+                <SelectItem value="user">Nutzer</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -215,6 +234,10 @@ export default function AdminUsersPage() {
             totalPages={totalPages}
             isLoading={isLoading}
             onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size)
+              setCurrentPage(1)
+            }}
             onSuspend={handleSuspend}
             onUnsuspend={handleUnsuspend}
           />

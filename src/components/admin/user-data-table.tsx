@@ -28,6 +28,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { MoreHorizontal, Eye, Ban, UserCheck, Crown, User, Building } from 'lucide-react'
 import type { AdminUser } from '@/lib/admin/types'
 import { cn } from '@/lib/utils'
@@ -40,6 +47,7 @@ interface UserDataTableProps {
   totalPages: number
   isLoading: boolean
   onPageChange: (page: number) => void
+  onPageSizeChange?: (size: 25 | 50 | 100) => void
   onSuspend: (id: string) => void
   onUnsuspend: (id: string) => void
 }
@@ -76,6 +84,7 @@ export function UserDataTable({
   totalPages,
   isLoading,
   onPageChange,
+  onPageSizeChange,
   onSuspend,
   onUnsuspend,
 }: UserDataTableProps) {
@@ -298,9 +307,29 @@ export function UserDataTable({
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Zeige {(page - 1) * limit + 1} bis {Math.min(page * limit, total)} von{' '}
-          {total} Nutzern
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Zeige {(page - 1) * limit + 1} bis {Math.min(page * limit, total)} von{' '}
+            {total} Nutzern
+          </div>
+          {onPageSizeChange && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Pro Seite:</span>
+              <Select
+                value={String(limit)}
+                onValueChange={(value) => onPageSizeChange(Number(value) as 25 | 50 | 100)}
+              >
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Button

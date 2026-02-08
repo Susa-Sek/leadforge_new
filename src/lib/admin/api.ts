@@ -31,6 +31,7 @@ export async function fetchAdminUsers(filters: UserFilters = {}): Promise<UserLi
   if (filters.search) params.set('search', filters.search);
   if (filters.plan && filters.plan !== 'all') params.set('plan', filters.plan);
   if (filters.status && filters.status !== 'all') params.set('status', filters.status);
+  if (filters.role && filters.role !== 'all') params.set('role', filters.role);
   if (filters.page) params.set('page', filters.page.toString());
   if (filters.limit) params.set('limit', filters.limit.toString());
   if (filters.sort_by) params.set('sort_by', filters.sort_by);

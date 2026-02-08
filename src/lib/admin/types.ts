@@ -238,6 +238,7 @@ export interface UserFilters {
   search?: string;
   plan?: 'free' | 'pro' | 'enterprise' | 'all';
   status?: 'active' | 'suspended' | 'pending' | 'all';
+  role?: 'user' | 'admin' | 'all';
   page?: number;
   limit?: number;
   sort_by?: 'created_at' | 'last_login' | 'credits' | 'login_count';
