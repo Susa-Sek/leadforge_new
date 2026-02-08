@@ -20,6 +20,7 @@ import {
   Globe,
   CreditCard,
   FileText,
+  Lock,
 } from 'lucide-react';
 
 const settingsNavItems = [
@@ -52,6 +53,11 @@ const settingsNavItems = [
     title: 'Abrechnung',
     href: '/dashboard/einstellungen/abrechnung',
     icon: FileText,
+  },
+  {
+    title: 'Datenschutz',
+    href: '/dashboard/einstellungen/datenschutz',
+    icon: Lock,
   },
 ];
 

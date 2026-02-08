@@ -53,27 +53,36 @@ export default function LoginPage() {
           : error.message
       )
       setIsLoading(false)
-    } else {
-      // BUG-6 FIX: Check if user is suspended after login
-      if (data.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_suspended')
-          .eq('id', data.user.id)
-          .single()
-
-        if (profile?.is_suspended) {
-          // Sign out the suspended user
-          await supabase.auth.signOut()
-          setError('Dein Konto wurde gesperrt. Bitte kontaktiere den Support.')
-          setIsLoading(false)
-          return
-        }
-      }
-
-      router.refresh()
-      router.push('/dashboard')
+      return
     }
+
+    // BUG FIX: Check if session exists before proceeding
+    if (!data.session) {
+      setError('Anmeldung fehlgeschlagen. Bitte versuche es erneut.')
+      setIsLoading(false)
+      return
+    }
+
+    // BUG-6 FIX: Check if user is suspended after login
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_suspended')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profile?.is_suspended) {
+        // Sign out the suspended user
+        await supabase.auth.signOut()
+        setError('Dein Konto wurde gesperrt. Bitte kontaktiere den Support.')
+        setIsLoading(false)
+        return
+      }
+    }
+
+    // BUG FIX: Use hard redirect instead of client-side navigation
+    // This ensures cookies are properly set before the dashboard loads
+    window.location.href = '/dashboard'
   }
 
   return (

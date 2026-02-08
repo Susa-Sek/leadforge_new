@@ -51,6 +51,13 @@ export async function GET() {
     const isYearly = subscription.stripe_price_id?.includes("yearly") ||
                      process.env.STRIPE_PRICE_PRO_YEARLY === subscription.stripe_price_id;
 
+    // BUG FIX: Load actual credits from user_credits table for all users
+    const { data: credits } = await supabase
+      .from("user_credits")
+      .select("total_credits, used_credits")
+      .eq("user_id", user.id)
+      .single();
+
     return NextResponse.json({
       subscription: {
         plan: subscription.plan_id as any,
@@ -63,8 +70,8 @@ export async function GET() {
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
         stripeCustomerId: subscription.stripe_customer_id,
         stripeSubscriptionId: subscription.stripe_subscription_id,
-        creditsUsed: 0, // Will be fetched from user context
-        creditsTotal: subscription.plan_id === "pro" ? 500 : subscription.plan_id === "enterprise" ? 2000 : 30,
+        creditsUsed: credits?.used_credits || 0,
+        creditsTotal: credits?.total_credits || 30,
       },
     });
   } catch (error) {

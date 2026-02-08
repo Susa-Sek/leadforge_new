@@ -45,7 +45,7 @@ function UpgradePageContent() {
   const handleUpgrade = async (planId: string, billingInterval: "monthly" | "yearly") => {
     if (!user) {
       // Redirect to login with return URL
-      router.push(`/anmelden?returnTo=/upgrade`);
+      router.push(`/login?returnTo=/upgrade`);
       return;
     }
 

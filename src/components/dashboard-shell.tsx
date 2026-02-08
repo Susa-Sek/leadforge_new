@@ -47,13 +47,13 @@ const navItems = [
   { title: 'Verlauf', href: '/dashboard/verlauf', icon: History },
   { title: 'Sammlungen', href: '/dashboard/sammlungen', icon: FolderOpen },
   { title: 'Exporte', href: '/dashboard/exporte', icon: Download },
-  { title: 'Benachrichtigungen', href: '/dashboard/notifications', icon: Users },
+  { title: 'Benachrichtigungen', href: '/dashboard/benachrichtigungen', icon: Users },
 ]
 
 const settingsItems = [
   { title: 'Abonnement', href: '/dashboard/einstellungen/abonnement', icon: Crown },
   { title: 'Abrechnung', href: '/dashboard/einstellungen/abrechnung', icon: Receipt },
-  { title: 'Benachrichtigungen', href: '/dashboard/einstellungen/notifications', icon: Bell },
+  { title: 'Benachrichtigungen', href: '/dashboard/einstellungen/benachrichtigungen', icon: Bell },
 ]
 
 type DashboardShellProps = {
