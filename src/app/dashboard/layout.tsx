@@ -24,12 +24,12 @@ export default async function DashboardLayout({
       .from('profiles')
       .select('full_name, avatar_url')
       .eq('id', user.id)
-      .single(),
+      .maybeSingle(),
     supabase
       .from('user_credits')
       .select('total_credits, used_credits')
       .eq('user_id', user.id)
-      .single(),
+      .maybeSingle(),
   ])
 
   const creditsData = creditsResult.data

@@ -34,7 +34,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         .from('user_credits')
         .select('total_credits, used_credits')
         .eq('user_id', user.id)
-        .single(),
+        .maybeSingle(),
       supabase
         .from('search_results')
         .select('id', { count: 'exact', head: true })
