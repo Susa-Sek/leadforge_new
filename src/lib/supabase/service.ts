@@ -1,11 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 /**
  * Create a Supabase client with service role privileges.
  * This client bypasses RLS policies and should ONLY be used for admin operations.
  */
-export const createServiceClient = async (cookieStore?: ReturnType<typeof import('next/headers').cookies>) => {
-  const cookies = cookieStore || (await import('next/headers')).cookies()
+export const createServiceClient = async () => {
+  const cookieStore = await cookies()
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,7 +14,7 @@ export const createServiceClient = async (cookieStore?: ReturnType<typeof import
     {
       cookies: {
         get(name: string) {
-          return cookies.get(name)?.value
+          return cookieStore.get(name)?.value
         },
       },
     }
