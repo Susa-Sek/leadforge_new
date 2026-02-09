@@ -69,7 +69,7 @@ export async function updateSession(request: NextRequest) {
       .from('profiles')
       .select('is_suspended')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     if (!error && profile?.is_suspended) {
       // User is suspended - redirect to suspended page
@@ -86,7 +86,7 @@ export async function updateSession(request: NextRequest) {
       .from('profiles')
       .select('role, is_suspended')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     // BUG-1 FIX: Handle API routes differently (return 403 JSON, not redirect)
     const isAPIRoute = pathname.startsWith('/api/')
