@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { DashboardShell } from '@/components/dashboard-shell'
 
 export default async function DashboardLayout({
@@ -18,14 +19,17 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
+  // Use service role client to bypass RLS issues
+  const serviceSupabase = await createServiceClient()
+
   // Fetch profile and credits in parallel
   const [profileResult, creditsResult] = await Promise.all([
-    supabase
+    serviceSupabase
       .from('profiles')
       .select('full_name, avatar_url')
       .eq('id', user.id)
       .maybeSingle(),
-    supabase
+    serviceSupabase
       .from('user_credits')
       .select('total_credits, used_credits')
       .eq('user_id', user.id)

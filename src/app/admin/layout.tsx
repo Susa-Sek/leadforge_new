@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { AdminShell } from '@/components/admin/admin-shell'
 
 export default async function AdminLayout({
@@ -15,8 +16,9 @@ export default async function AdminLayout({
     redirect('/login')
   }
 
-  // Check if user is admin
-  const { data: profile, error: profileError } = await supabase
+  // Check if user is admin using service role client to bypass RLS
+  const serviceSupabase = await createServiceClient()
+  const { data: profile, error: profileError } = await serviceSupabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
