@@ -37,6 +37,10 @@ yarn-error.log*
 
 # MCP servers (embedded git repos)
 /mcp/
+/mcp-apify-server/
+nul
+/mcp-apify-server/
+nul
 
 # typescript
 *.tsbuildinfo
