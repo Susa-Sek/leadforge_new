@@ -20,7 +20,7 @@ export default async function DashboardLayout({
   }
 
   // Use service role client to bypass RLS issues
-  const serviceSupabase = await createServiceClient()
+  const serviceSupabase = createServiceClient()
 
   // Fetch profile and credits in parallel
   const [profileResult, creditsResult] = await Promise.all([

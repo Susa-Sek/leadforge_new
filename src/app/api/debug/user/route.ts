@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 
 export async function GET() {
+  // Keep regular client for auth (cookies-based)
   const supabase = await createClient()
-
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {
@@ -13,15 +14,18 @@ export async function GET() {
     )
   }
 
+  // Use service client for database queries (bypasses RLS)
+  const serviceSupabase = createServiceClient()
+
   // Test profile query
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile, error: profileError } = await serviceSupabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .maybeSingle()
 
   // Test credits query
-  const { data: credits, error: creditsError } = await supabase
+  const { data: credits, error: creditsError } = await serviceSupabase
     .from('user_credits')
     .select('*')
     .eq('user_id', user.id)

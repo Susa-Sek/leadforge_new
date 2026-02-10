@@ -17,7 +17,7 @@ export default async function AdminLayout({
   }
 
   // Check if user is admin using service role client to bypass RLS
-  const serviceSupabase = await createServiceClient()
+  const serviceSupabase = createServiceClient()
   const { data: profile, error: profileError } = await serviceSupabase
     .from('profiles')
     .select('role')
