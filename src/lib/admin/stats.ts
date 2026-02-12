@@ -4,7 +4,7 @@
  * Provides aggregated statistics for the admin dashboard
  */
 
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { unstable_cache } from 'next/cache';
 
 export interface DashboardStats {
@@ -82,7 +82,8 @@ export async function getDashboardStats(
   from?: Date,
   to?: Date
 ): Promise<DashboardStats> {
-  const supabase = await createClient();
+  // Use service client to bypass RLS
+  const supabase = createServiceClient();
 
   const fromIso = from?.toISOString() || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const toIso = to?.toISOString() || new Date().toISOString();
@@ -107,7 +108,8 @@ export async function getRevenueStats(
   from?: Date,
   to?: Date
 ): Promise<RevenueStats> {
-  const supabase = await createClient();
+  // Use service client to bypass RLS
+  const supabase = createServiceClient();
 
   const fromIso = from?.toISOString() || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const toIso = to?.toISOString() || new Date().toISOString();
@@ -132,7 +134,8 @@ export async function getActivityStats(
   from?: Date,
   to?: Date
 ): Promise<ActivityStats> {
-  const supabase = await createClient();
+  // Use service client to bypass RLS
+  const supabase = createServiceClient();
 
   const fromDate = from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const toDate = to || new Date();
@@ -193,7 +196,8 @@ export async function getTopUsers(
   full_name: string;
   metric_value: number;
 }>> {
-  const supabase = await createClient();
+  // Use service client to bypass RLS
+  const supabase = createServiceClient();
 
   let query;
 
@@ -315,7 +319,8 @@ export async function getPlanDistribution(): Promise<{
   professional: number;
   enterprise: number;
 }> {
-  const supabase = await createClient();
+  // Use service client to bypass RLS
+  const supabase = createServiceClient();
 
   const { data, error } = await supabase.rpc('get_plan_distribution');
 

@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { requireAdminAPI } from '@/lib/admin/middleware';
 import { updateUserSchema } from '@/lib/admin/validation';
 import { logUserPlanChange, logUserRoleChange } from '@/lib/admin/audit';
@@ -25,7 +25,11 @@ export async function GET(
   if (adminCheck.errorResponse) return adminCheck.errorResponse;
 
   const { id } = await params;
-  const supabase = await createClient();
+
+  console.log('[Admin User Detail API] GET operation by:', adminCheck.user.id);
+
+  // Use service client to bypass RLS
+  const supabase = createServiceClient();
 
   try {
     // Get user with related data
@@ -80,7 +84,11 @@ export async function PATCH(
 
   const admin = adminCheck.user;
   const { id } = await params;
-  const supabase = await createClient();
+
+  console.log('[Admin User Detail API] PATCH operation by:', admin.id);
+
+  // Use service client to bypass RLS
+  const supabase = createServiceClient();
 
   try {
     // Parse and validate body

@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { requireAdminAPI } from '@/lib/admin/middleware';
 import { updateAnnouncementSchema } from '@/lib/admin/validation';
 import { logAnnouncementUpdate, logAnnouncementDelete } from '@/lib/admin/audit';
@@ -26,7 +26,11 @@ export async function PATCH(
 
   const admin = adminCheck.user;
   const { id } = await params;
-  const supabase = await createClient();
+
+  console.log('[Admin Announcement Detail API] PATCH operation by:', admin.id);
+
+  // Use service client to bypass RLS
+  const supabase = createServiceClient();
 
   try {
     // Parse and validate body
@@ -121,7 +125,11 @@ export async function DELETE(
 
   const admin = adminCheck.user;
   const { id } = await params;
-  const supabase = await createClient();
+
+  console.log('[Admin Announcement Detail API] DELETE operation by:', admin.id);
+
+  // Use service client to bypass RLS
+  const supabase = createServiceClient();
 
   try {
     // Get announcement title for logging

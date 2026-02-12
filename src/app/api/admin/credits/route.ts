@@ -5,7 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { requireAdminAPI } from '@/lib/admin/middleware';
 import { creditAdjustmentSchema, creditTransactionQuerySchema } from '@/lib/admin/validation';
 import { logCreditAdjustment } from '@/lib/admin/audit';
@@ -21,7 +21,10 @@ export async function GET(request: Request) {
   const adminCheck = await requireAdminAPI();
   if (adminCheck.errorResponse) return adminCheck.errorResponse;
 
-  const supabase = await createClient();
+  console.log('[Admin Credits API] GET operation by:', adminCheck.user.id);
+
+  // Use service client to bypass RLS
+  const supabase = createServiceClient();
 
   try {
     // Parse query parameters
@@ -114,7 +117,11 @@ export async function POST(request: Request) {
   if (adminCheck.errorResponse) return adminCheck.errorResponse;
 
   const admin = adminCheck.user;
-  const supabase = await createClient();
+
+  console.log('[Admin Credits API] POST operation by:', admin.id);
+
+  // Use service client to bypass RLS
+  const supabase = createServiceClient();
 
   try {
     // Parse and validate body

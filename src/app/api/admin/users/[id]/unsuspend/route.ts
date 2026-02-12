@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { requireAdminAPI } from '@/lib/admin/middleware';
 import { logUserUnsuspend } from '@/lib/admin/audit';
 import { applyRateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
@@ -23,7 +23,11 @@ export async function POST(
 
   const admin = adminCheck.user;
   const { id } = await params;
-  const supabase = await createClient();
+
+  console.log('[Admin Unsuspend User API] POST operation by:', admin.id);
+
+  // Use service client to bypass RLS
+  const supabase = createServiceClient();
 
   try {
     // Call the unsuspend function
